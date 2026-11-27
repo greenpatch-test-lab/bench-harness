@@ -121,7 +121,7 @@ jobs:
               fi
               # If test passed on both main & PR, OR if test needed network/services on main, probe typecheck/build/lint (TS) or mypy/ty/ruff/black (Py)
               if [[ ("${MAIN_EXIT}" == "0" && "${PR_EXIT}" == "0") || "${MAIN_EXIT}" != "0" ]]; then
-                if [[ "${ECOSYSTEM}" == "ts" ]]; then PROBES="typecheck build lint"; else PROBES="mypy ty ruff black"; fi
+                if [[ "${ECOSYSTEM}" == "ts" ]]; then PROBES="typecheck build lint"; else PROBES="mypy ty ruff ruff-fmt black"; fi
                 for mode in ${PROBES}; do
                   bash scripts/phase3b_docker_test.sh /tmp/clean-main "${ECOSYSTEM}" /tmp/cache-main "" "/tmp/probe_main_${mode}.log" "${mode}"
                   PM=$?

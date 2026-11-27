@@ -1,0 +1,512 @@
+[
+  {
+    "repo": "ryankanno/cookiecutter-py",
+    "language": "Python",
+    "stars": 6,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 677,
+    "pr_url": "https://github.com/ryankanno/cookiecutter-py/pull/677",
+    "pr_title": "build(deps-dev): Update ruff requirement from <0.17,>=0.16.3 to >=0.16.3,<0.18 in the dev group",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-13T00:34:35Z",
+    "updated_at": "2026-11-23T08:24:57Z"
+  },
+  {
+    "repo": "smart-on-fhir/smart-fetch",
+    "language": "Python",
+    "stars": 8,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 55,
+    "pr_url": "https://github.com/smart-on-fhir/smart-fetch/pull/55",
+    "pr_title": "build(deps-dev): update ruff requirement from <0.15 to <0.16",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-02-16T01:36:28Z",
+    "updated_at": "2026-02-16T01:36:29Z"
+  },
+  {
+    "repo": "smart-on-fhir/chart-review",
+    "language": "Python",
+    "stars": 7,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 84,
+    "pr_url": "https://github.com/smart-on-fhir/chart-review/pull/84",
+    "pr_title": "build(deps-dev): update ruff requirement from <0.15 to <0.16",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-02-16T03:07:41Z",
+    "updated_at": "2026-02-16T03:07:41Z"
+  },
+  {
+    "repo": "aishwara-limited/open-vedic-calc",
+    "language": "Python",
+    "stars": 10,
+    "license": "GPL-3.0",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 133,
+    "pr_url": "https://github.com/aishwara-limited/open-vedic-calc/pull/133",
+    "pr_title": "build(deps-dev): Bump ruff from 0.16.9 to 0.17.5",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-11-22T13:52:46Z",
+    "updated_at": "2026-11-26T21:12:32Z"
+  },
+  {
+    "repo": "dev360/crease",
+    "language": "Python",
+    "stars": 10,
+    "license": "BSD-3-Clause",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 42,
+    "pr_url": "https://github.com/dev360/crease/pull/42",
+    "pr_title": "chore(deps-dev): update ruff requirement from <0.16,>=0.6 to >=0.6,<0.17",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-29T08:34:06Z",
+    "updated_at": "2026-07-29T08:34:07Z"
+  },
+  {
+    "repo": "vlnevyhosteny/piscope-ads1115",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 7,
+    "pr_url": "https://github.com/vlnevyhosteny/piscope-ads1115/pull/7",
+    "pr_title": "build(deps-dev): update ruff requirement from <0.12,>=0.11 to >=0.11,<0.17",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-01T17:57:03Z",
+    "updated_at": "2026-08-01T17:57:03Z"
+  },
+  {
+    "repo": "efischer19/llm-clutch",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 37,
+    "pr_url": "https://github.com/efischer19/llm-clutch/pull/37",
+    "pr_title": "chore(deps-dev): Update ruff requirement from <0.16,>=0.15.20 to >=0.15.20,<0.17",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-24T13:24:29Z",
+    "updated_at": "2026-07-24T13:24:30Z"
+  },
+  {
+    "repo": "piotr-adamski/runtime-contract",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 80,
+    "pr_url": "https://github.com/piotr-adamski/runtime-contract/pull/80",
+    "pr_title": "chore(deps-dev): update ruff requirement from <0.16,>=0.15.21 to >=0.15.21,<0.17",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-27T04:25:35Z",
+    "updated_at": "2026-07-27T04:25:36Z"
+  },
+  {
+    "repo": "fletort/ranking",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 110,
+    "pr_url": "https://github.com/fletort/ranking/pull/110",
+    "pr_title": "chore: Update ruff requirement from ^0.15 to ^0.17",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-29T21:06:28Z",
+    "updated_at": "2026-11-15T18:33:37Z"
+  },
+  {
+    "repo": "OpenJobDescription/openjd-adaptor-runtime-for-python",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 283,
+    "pr_url": "https://github.com/OpenJobDescription/openjd-adaptor-runtime-for-python/pull/283",
+    "pr_title": "chore(deps): update ruff requirement from ==0.15.* to ==0.17.*",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-14T05:21:05Z",
+    "updated_at": "2026-10-14T05:23:35Z"
+  },
+  {
+    "repo": "OpenJobDescription/openjd-cli",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 245,
+    "pr_url": "https://github.com/OpenJobDescription/openjd-cli/pull/245",
+    "pr_title": "chore(deps): update ruff requirement from ==0.15.* to ==0.17.*",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-12T22:49:57Z",
+    "updated_at": "2026-10-12T23:53:29Z"
+  },
+  {
+    "repo": "crate/pytest-cratedb",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 79,
+    "pr_url": "https://github.com/crate/pytest-cratedb/pull/79",
+    "pr_title": "Chore(deps-dev): Update ruff requirement from <0.16 to <0.17",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-27T18:53:46Z",
+    "updated_at": "2026-07-27T18:53:47Z"
+  },
+  {
+    "repo": "crate/meltano-target-cratedb",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 116,
+    "pr_url": "https://github.com/crate/meltano-target-cratedb/pull/116",
+    "pr_title": "Chore(deps-dev): Update ruff requirement from <0.16 to <0.17",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-24T12:03:18Z",
+    "updated_at": "2026-07-24T12:03:19Z"
+  },
+  {
+    "repo": "crate/mlflow-cratedb",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 325,
+    "pr_url": "https://github.com/crate/mlflow-cratedb/pull/325",
+    "pr_title": "Chore(deps-dev): Update ruff requirement from <0.16 to <0.17",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-24T07:33:14Z",
+    "updated_at": "2026-07-24T07:33:15Z"
+  },
+  {
+    "repo": "kvrishwanth1800-cmd/frostglass",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 5,
+    "pr_url": "https://github.com/kvrishwanth1800-cmd/frostglass/pull/5",
+    "pr_title": "Build(deps-dev): update ruff requirement from <0.9,>=0.8 to >=0.8,<0.17",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-09T17:51:55Z",
+    "updated_at": "2026-09-15T14:20:48Z"
+  },
+  {
+    "repo": "mickdarling/rightyo",
+    "language": "Python",
+    "stars": 10,
+    "license": "GPL-3.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 267,
+    "pr_url": "https://github.com/mickdarling/rightyo/pull/267",
+    "pr_title": "Bump ruff from 0.11.13 to 0.17.4 in /scripts",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-11-10T13:35:02Z",
+    "updated_at": "2026-11-10T13:37:34Z"
+  },
+  {
+    "repo": "Mustafa-Ali-Ertugrul/Multi-Agent",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 10,
+    "pr_url": "https://github.com/Mustafa-Ali-Ertugrul/Multi-Agent/pull/10",
+    "pr_title": "chore(deps-dev): update ruff requirement from <0.6,>=0.5 to >=0.5,<0.17",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-30T16:54:05Z",
+    "updated_at": "2026-07-30T16:54:06Z"
+  },
+  {
+    "repo": "rasgiza/fabric-phi-deidentification-accelerator",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 7,
+    "pr_url": "https://github.com/rasgiza/fabric-phi-deidentification-accelerator/pull/7",
+    "pr_title": "Update ruff requirement from ==0.15.* to >=0.15,<0.17 in the dev-tooling group across 1 directory",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-24T14:06:02Z",
+    "updated_at": "2026-10-09T14:04:41Z"
+  },
+  {
+    "repo": "visakhunnikrishnan/tsanomaly",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 9,
+    "pr_url": "https://github.com/visakhunnikrishnan/tsanomaly/pull/9",
+    "pr_title": "build(deps-dev): update ruff requirement from <0.16,>=0.15 to >=0.15,<0.17 in the python-dependencies group across 1 directory",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-24T08:20:44Z",
+    "updated_at": "2026-10-16T05:34:21Z"
+  },
+  {
+    "repo": "eskultety/hermeto-dependabot-test",
+    "language": "Python",
+    "stars": 10,
+    "license": "GPL-3.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 21,
+    "pr_url": "https://github.com/eskultety/hermeto-dependabot-test/pull/21",
+    "pr_title": "chore(deps): Bump the minor-and-patch group across 1 directory with 42 updates",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-01T23:46:07Z",
+    "updated_at": "2026-09-01T23:46:44Z"
+  },
+  {
+    "repo": "Sahsaki/stuck-tool",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 3,
+    "pr_url": "https://github.com/Sahsaki/stuck-tool/pull/3",
+    "pr_title": "Update mcp requirement from <2,>=1.0.0 to >=1.0.0,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-23T09:23:45Z",
+    "updated_at": "2026-10-23T09:23:50Z"
+  },
+  {
+    "repo": "ni1110/Atlas-Geospatial-Intelligence",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 3,
+    "pr_url": "https://github.com/ni1110/Atlas-Geospatial-Intelligence/pull/3",
+    "pr_title": "Update mcp requirement from <2,>=1.25 to >=1.25,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-23T12:37:06Z",
+    "updated_at": "2026-08-23T12:37:07Z"
+  },
+  {
+    "repo": "Nexarion-Technologies/mcp-operations-context-demo",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 3,
+    "pr_url": "https://github.com/Nexarion-Technologies/mcp-operations-context-demo/pull/3",
+    "pr_title": "Update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-02T01:32:49Z",
+    "updated_at": "2026-08-02T01:32:50Z"
+  },
+  {
+    "repo": "thiagorchaves/github-flow-mcp",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 3,
+    "pr_url": "https://github.com/thiagorchaves/github-flow-mcp/pull/3",
+    "pr_title": "build(deps): update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-03T20:55:33Z",
+    "updated_at": "2026-08-03T20:55:34Z"
+  },
+  {
+    "repo": "matisup10/e-Boekhouden-MCP",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 3,
+    "pr_url": "https://github.com/matisup10/e-Boekhouden-MCP/pull/3",
+    "pr_title": "Update mcp requirement from <2,>=1.12.0 to >=1.12.0,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-01T15:37:06Z",
+    "updated_at": "2026-08-01T15:37:07Z"
+  },
+  {
+    "repo": "leocelis/eif",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 3,
+    "pr_url": "https://github.com/leocelis/eif/pull/3",
+    "pr_title": "build(deps-dev): Update mcp requirement from <2,>=1.0 to >=1.0,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-03T00:55:27Z",
+    "updated_at": "2026-08-03T00:55:28Z"
+  },
+  {
+    "repo": "OpenIaaS/directadmin-mcp-server",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "master",
+    "lockfile": "pyproject.toml",
+    "pr_number": 3,
+    "pr_url": "https://github.com/OpenIaaS/directadmin-mcp-server/pull/3",
+    "pr_title": "chore(deps): update mcp requirement from <2.0.0,>=1.6.0 to >=1.6.0,<3.0.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-02T23:44:14Z",
+    "updated_at": "2026-09-04T20:37:54Z"
+  },
+  {
+    "repo": "HaiderHanif/agentgate",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 3,
+    "pr_url": "https://github.com/HaiderHanif/agentgate/pull/3",
+    "pr_title": "chore(deps): update mcp requirement from >=1.2 to >=1.28.1",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-25T08:25:32Z",
+    "updated_at": "2026-07-25T13:02:15Z"
+  },
+  {
+    "repo": "parikshit06reddy-cloud/hybrid-rag-vectordb",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 3,
+    "pr_url": "https://github.com/parikshit06reddy-cloud/hybrid-rag-vectordb/pull/3",
+    "pr_title": "chore(deps): Bump the vector-stores group with 5 updates",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-05-05T20:00:20Z",
+    "updated_at": "2026-07-28T16:34:22Z"
+  },
+  {
+    "repo": "aws-deadline/deadline-cloud-test-fixtures",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 350,
+    "pr_url": "https://github.com/aws-deadline/deadline-cloud-test-fixtures/pull/350",
+    "pr_title": "chore(deps): update pytest requirement from ==9.1.* to ==9.2.*",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-11-02T10:27:43Z",
+    "updated_at": "2026-11-02T10:28:15Z"
+  }
+]

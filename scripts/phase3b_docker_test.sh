@@ -92,6 +92,8 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
 elif [[ "${ECOSYSTEM}" == "py" ]]; then
   if [[ "${VERIFY_MODE}" == "ruff" ]]; then
     PY_CHECK="timeout -k 10s 120s ruff check ."
+  elif [[ "${VERIFY_MODE}" == "ruff-fmt" ]]; then
+    PY_CHECK="timeout -k 10s 120s ruff format --check ."
   elif [[ "${VERIFY_MODE}" == "mypy" ]]; then
     PY_CHECK="timeout -k 10s 180s mypy ."
   elif [[ "${VERIFY_MODE}" == "ty" ]]; then
