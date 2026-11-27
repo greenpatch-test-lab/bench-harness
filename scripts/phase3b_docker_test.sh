@@ -99,7 +99,7 @@ elif [[ "${ECOSYSTEM}" == "py" ]]; then
   elif [[ "${VERIFY_MODE}" == "black" ]]; then
     PY_CHECK="timeout -k 10s 120s black --check ."
   else
-    PY_CHECK="timeout -k 10s 180s python3 -m pytest -q --maxfail=10 --ignore=tests/e2e --ignore=test/e2e --ignore=test/functional --ignore=tests/integration"
+    PY_CHECK="timeout -k 10s 180s python3 -m pytest -q --maxfail=10 --ignore=tests/e2e --ignore=test/e2e --ignore=test/functional --ignore=tests/integration --ignore=test/integration --ignore=integtests"
   fi
 
   PY_INNER="python3 -c 'import os, re, tomllib

@@ -96,31 +96,33 @@ jobs:
           else
             bash scripts/phase3b_docker_test.sh /tmp/clean-main "${ECOSYSTEM}" /tmp/cache-main "" /tmp/test_main.log test
             MAIN_EXIT=$?
-            if [[ "${MAIN_EXIT}" == "0" ]]; then
-              P_PR=$(prep_branch "${PR_BRANCH}" "pr")
-              if [[ "${P_PR}" != "0" ]]; then
-                PR_EXIT="${P_PR}"
-              else
+            P_PR=$(prep_branch "${PR_BRANCH}" "pr")
+            if [[ "${P_PR}" != "0" ]]; then
+              PR_EXIT="${P_PR}"
+            else
+              if [[ "${MAIN_EXIT}" == "0" ]]; then
                 bash scripts/phase3b_docker_test.sh /tmp/clean-pr "${ECOSYSTEM}" /tmp/cache-pr "" /tmp/test_pr.log test
                 PR_EXIT=$?
-                # If test passed on both main & PR, probe build/typecheck (TS) or ruff/ty/mypy (Py) to reproduce exact failing CI gate!
-                if [[ "${PR_EXIT}" == "0" ]]; then
-                  if [[ "${ECOSYSTEM}" == "ts" ]]; then PROBES="typecheck build lint"; else PROBES="ruff ty mypy black"; fi
-                  for mode in ${PROBES}; do
-                    bash scripts/phase3b_docker_test.sh /tmp/clean-main "${ECOSYSTEM}" /tmp/cache-main "" "/tmp/probe_main_${mode}.log" "${mode}"
-                    PM=$?
-                    if [[ $PM -eq 0 ]]; then
-                      bash scripts/phase3b_docker_test.sh /tmp/clean-pr "${ECOSYSTEM}" /tmp/cache-pr "" "/tmp/probe_pr_${mode}.log" "${mode}"
-                      PP=$?
-                      if [[ $PP -ne 0 && $PP -ne 127 ]]; then
-                        VERIFY_MODE="${mode}"
-                        PR_EXIT=$PP
-                        cp "/tmp/probe_pr_${mode}.log" /tmp/test_pr.log
-                        break
-                      fi
+              fi
+              # If test passed on both main & PR, OR if test needed network/services on main, probe typecheck/build/lint (TS) or mypy/ty/ruff/black (Py)
+              if [[ ("${MAIN_EXIT}" == "0" && "${PR_EXIT}" == "0") || "${MAIN_EXIT}" != "0" ]]; then
+                if [[ "${ECOSYSTEM}" == "ts" ]]; then PROBES="typecheck build lint"; else PROBES="mypy ty ruff black"; fi
+                for mode in ${PROBES}; do
+                  bash scripts/phase3b_docker_test.sh /tmp/clean-main "${ECOSYSTEM}" /tmp/cache-main "" "/tmp/probe_main_${mode}.log" "${mode}"
+                  PM=$?
+                  if [[ $PM -eq 0 ]]; then
+                    bash scripts/phase3b_docker_test.sh /tmp/clean-pr "${ECOSYSTEM}" /tmp/cache-pr "" "/tmp/probe_pr_${mode}.log" "${mode}"
+                    PP=$?
+                    if [[ $PP -ne 0 && $PP -ne 127 ]]; then
+                      VERIFY_MODE="${mode}"
+                      MAIN_EXIT=0
+                      PR_EXIT=$PP
+                      cp "/tmp/probe_main_${mode}.log" /tmp/test_main.log
+                      cp "/tmp/probe_pr_${mode}.log" /tmp/test_pr.log
+                      break
                     fi
-                  done
-                fi
+                  fi
+                done
               fi
             fi
           fi
