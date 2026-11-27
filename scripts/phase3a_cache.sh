@@ -124,20 +124,32 @@ elif [[ "${ECOSYSTEM}" == "py" ]]; then
       cp -a "${CACHE_STAGE}/.venv" "${PKG_CACHE}/venv"
     fi
   elif [[ -f "${CACHE_STAGE}/poetry.lock" ]]; then
-    echo "[Phase 3a] Extracting poetry.lock requirements & fetching via uv (--exclude-newer '3 days')"
+    echo "[Phase 3a] Extracting poetry.lock requirements (Linux py3.12 marker-aware) & fetching via uv (--exclude-newer '3 days')"
     python3 - "${CACHE_STAGE}/poetry.lock" "${CACHE_STAGE}/_poetry_reqs.txt" <<'PY'
-import sys, tomllib
+import re, sys, tomllib
 lock = tomllib.loads(open(sys.argv[1], "rb").read().decode("utf-8"))
-lines = []
+seen = {}
 for pkg in lock.get("package", []):
     name, ver = pkg.get("name"), pkg.get("version")
-    if name and ver:
-        lines.append(f"{name}=={ver}")
-open(sys.argv[2], "w").write("\n".join(lines) + "\n")
+    if not name or not ver:
+        continue
+    key = name.lower().replace("_", "-")
+    if key in ("pywin32", "pywinpty", "win32-setctime", "pyobjc-core", "pyobjc-framework-cocoa", "colorama"):
+        continue
+    markers = str(pkg.get("markers") or "").lower()
+    if any(x in markers for x in ("win32", "windows", "darwin", "cygwin", "pypy")):
+        if "linux" not in markers and "!=" not in markers:
+            continue
+    pyv = str(pkg.get("python-versions") or "")
+    if re.search(r"<\s*3\.(?:[0-9]|1[012])\b", pyv) and ">=3.12" not in pyv:
+        continue
+    # Prefer latest version if multiple platform/python entries exist
+    seen[key] = f"{name}=={ver}"
+open(sys.argv[2], "w").write("\n".join(seen.values()) + "\n")
 PY
     (cd "${CACHE_STAGE}" && uv venv "${PKG_CACHE}/venv" --python 3.12 && (uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" -r "${CACHE_STAGE}/_poetry_reqs.txt" pytest || uv pip install --python "${PKG_CACHE}/venv/bin/python" --cache-dir "${PKG_CACHE}/uv-cache" -r "${CACHE_STAGE}/_poetry_reqs.txt" pytest))
   elif [[ -f "${CACHE_STAGE}/pyproject.toml" || -f "${CACHE_STAGE}/requirements.txt" ]]; then
-    echo "[Phase 3a] uv pip install from pyproject.toml/requirements.txt with 72h cooldown (--exclude-newer '3 days')"
+    echo "[Phase 3a] uv pip install from pyproject.toml/requirements*.txt with 72h cooldown (--exclude-newer '3 days')"
     python3 - "${CACHE_STAGE}" "${CACHE_STAGE}/_py_deps.txt" <<'PY'
 import os, sys, tomllib
 stage, out_p = sys.argv[1], sys.argv[2]
@@ -149,21 +161,42 @@ if os.path.isfile(pp):
         proj = data.get("project") or {}
         deps.extend(proj.get("dependencies") or [])
         opt = proj.get("optional-dependencies") or {}
-        for k in ("dev", "test", "tests", "testing"):
-            deps.extend(opt.get(k) or [])
+        for k, vals in opt.items():
+            if k.lower() not in ("docs", "doc", "benchmark", "benchmarks", "gpu", "cuda"):
+                deps.extend(v for v in (vals or []) if isinstance(v, str))
         dgroups = data.get("dependency-groups") or {}
-        for k in ("dev", "test", "tests", "testing"):
-            for item in (dgroups.get(k) or []):
-                if isinstance(item, str):
-                    deps.append(item)
+        for k, vals in dgroups.items():
+            if k.lower() not in ("docs", "doc"):
+                for item in (vals or []):
+                    if isinstance(item, str):
+                        deps.append(item)
+        # Support [tool.poetry.dependencies] and [tool.poetry.group.*.dependencies]
+        poetry = (data.get("tool") or {}).get("poetry") or {}
+        def add_poetry_map(m):
+            for k, v in (m or {}).items():
+                if k.lower() == "python":
+                    continue
+                if isinstance(v, str):
+                    spec = v.replace("^", ">=").replace("~", ">=")
+                    deps.append(f"{k}{spec}" if spec and spec[0] in "<>=!~" else f"{k}=={spec}" if spec and spec != "*" else k)
+                elif isinstance(v, dict):
+                    ver = str(v.get("version") or "")
+                    spec = ver.replace("^", ">=").replace("~", ">=")
+                    deps.append(f"{k}{spec}" if spec and spec[0] in "<>=!~" else f"{k}=={spec}" if spec and spec != "*" else k)
+        add_poetry_map(poetry.get("dependencies"))
+        add_poetry_map(poetry.get("dev-dependencies"))
+        for gname, gval in (poetry.get("group") or {}).items():
+            if gname.lower() not in ("docs", "doc") and isinstance(gval, dict):
+                add_poetry_map(gval.get("dependencies"))
     except Exception:
         pass
-req = os.path.join(stage, "requirements.txt")
-if os.path.isfile(req):
-    for line in open(req, encoding="utf-8", errors="replace"):
-        s = line.split("#")[0].strip()
-        if s and not s.startswith("-"):
-            deps.append(s)
+for rname in ("requirements.txt", "requirements-dev.txt", "requirements-test.txt"):
+    req = os.path.join(stage, rname)
+    if os.path.isfile(req):
+        for line in open(req, encoding="utf-8", errors="replace"):
+            s = line.split("#")[0].strip()
+            if s and not s.startswith("-"):
+                deps.append(s)
 open(out_p, "w", encoding="utf-8").write("\n".join(deps) + "\n")
 PY
     (cd "${CACHE_STAGE}" && uv venv "${PKG_CACHE}/venv" --python 3.12 && ([[ -s "${CACHE_STAGE}/_py_deps.txt" ]] && (uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" -r "${CACHE_STAGE}/_py_deps.txt" pytest || uv pip install --python "${PKG_CACHE}/venv/bin/python" --cache-dir "${PKG_CACHE}/uv-cache" -r "${CACHE_STAGE}/_py_deps.txt" pytest) || uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" pytest))
