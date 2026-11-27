@@ -12,9 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Host Tooling (Node 22, uv, semgrep, gitleaks, detect-secrets)
+      - name: Install Host Tooling (Node 22, uv, semgrep, gitleaks, detect-secrets) & Pre-Pull Sandbox Image
         run: |
           npm ci --ignore-scripts
+          docker pull -q node:22-bookworm-slim
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           $HOME/.local/bin/uv tool install --python 3.12 semgrep

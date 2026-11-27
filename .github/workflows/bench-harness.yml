@@ -65,10 +65,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Host Tooling (NO SECRETS)
+      - name: Install Host Tooling (NO SECRETS) & Pre-Pull Sandbox Image
         run: |
           npm ci --ignore-scripts
           npm install -g pnpm@10
+          if [[ "${ECOSYSTEM}" == "ts" ]]; then docker pull -q node:22-bookworm-slim; else docker pull -q python:3.12-slim; fi
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           $HOME/.local/bin/uv tool install --python 3.12 semgrep
