@@ -26,6 +26,9 @@ def load_lab_pat() -> str:
 
 
 def download_run_artifacts(run_id: str, dest: Path, token: str) -> None:
+    if dest.exists():
+        import shutil
+        shutil.rmtree(dest, ignore_errors=True)
     dest.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ)
     env["GH_TOKEN"] = token
@@ -62,15 +65,20 @@ def main() -> None:
     seen: set[tuple[str, str]] = set()
     all_checked = 0
 
+    # Latest run wins, and any clean_baseline_eligible=True record takes precedence
+    latest_by_key: dict[tuple[str, str], dict] = {}
     for fp in sorted(pf_dir.rglob("*.json")):
         rec = json.loads(fp.read_text(encoding="utf-8"))
         eco = rec.get("ecosystem")
         up = rec.get("upstream_repo")
         key = (eco, up)
-        if key in seen:
-            continue
-        seen.add(key)
-        all_checked += 1
+        prev = latest_by_key.get(key)
+        if prev is None or rec.get("clean_baseline_eligible") is True or prev.get("clean_baseline_eligible") is not True:
+            latest_by_key[key] = rec
+
+    all_checked = len(latest_by_key)
+    for key, rec in latest_by_key.items():
+        eco, up = key
         if rec.get("clean_baseline_eligible") is True and key in meta_by_key:
             m = meta_by_key[key]
             entry = {
