@@ -29,6 +29,7 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
 
   if [[ -f "${CACHE_STAGE}/pnpm-lock.yaml" ]]; then
     echo "[Phase 3a] pnpm fetch + offline-ready store with 72h cooldown (minimum-release-age=4320) & --ignore-scripts"
+    export npm_config_manage_package_manager_versions="false"
     mkdir -p "${PKG_CACHE}/pnpm-store" "${PKG_CACHE}/pnpm-cli"
     # Stage standalone pnpm CLI into /pkg-cache so --read-only --network none container never needs corepack enable!
     PNPM_ROOT="$(npm root -g)/pnpm"

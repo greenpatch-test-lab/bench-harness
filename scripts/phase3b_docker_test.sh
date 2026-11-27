@@ -66,12 +66,28 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
       npm_config_update_notifier="false" \
       npm_config_offline="true" \
       npm_config_ignore_scripts="true" \
+      npm_config_manage_package_manager_versions="false" \
     sh -c "${INNER_CMD}" \
     > "${RAW_LOG}" 2>&1
   EXIT_CODE=$?
 
 elif [[ "${ECOSYSTEM}" == "py" ]]; then
-  # Resolve python site-packages inside /pkg-cache/venv dynamically so python:3.12-slim finds all deps offline
+  # Synthesize .dist-info/METADATA in /tmp/py-meta from pyproject.toml so importlib.metadata.version() works offline with zero code execution!
+  PY_INNER='python3 -c "import os, re, tomllib
+os.makedirs(\"/tmp/py-meta\", exist_ok=True)
+if os.path.isfile(\"/workspace/pyproject.toml\"):
+    d = tomllib.loads(open(\"/workspace/pyproject.toml\", \"rb\").read().decode(\"utf-8\", \"replace\"))
+    p = d.get(\"project\") or (d.get(\"tool\") or {}).get(\"poetry\") or {}
+    name = p.get(\"name\")
+    ver = p.get(\"version\") or \"0.0.0\"
+    if name:
+        norm = re.sub(r\"[-_.]+|[^A-Za-z0-9]\", \"_\", name)
+        di = f\"/tmp/py-meta/{norm}-{ver}.dist-info\"
+        os.makedirs(di, exist_ok=True)
+        open(f\"{di}/METADATA\", \"w\").write(f\"Metadata-Version: 2.1\\nName: {name}\\nVersion: {ver}\\n\")
+" 2>/dev/null || true
+timeout -k 10s 180s python3 -m pytest -q --maxfail=10'
+
   docker run --rm \
     --network none \
     -w /workspace \
@@ -89,9 +105,9 @@ elif [[ "${ECOSYSTEM}" == "py" ]]; then
       HOME="/tmp" \
       CI="true" \
       PYTHONDONTWRITEBYTECODE="1" \
-      PYTHONPATH="/workspace:/workspace/src:/pkg-cache/venv/lib/python3.12/site-packages" \
+      PYTHONPATH="/workspace:/workspace/src:/tmp/py-meta:/pkg-cache/venv/lib/python3.12/site-packages" \
       UV_OFFLINE="1" \
-    sh -c "timeout -k 10s 180s python3 -m pytest -q --maxfail=10" \
+    sh -c "${PY_INNER}" \
     > "${RAW_LOG}" 2>&1
   EXIT_CODE=$?
 else
