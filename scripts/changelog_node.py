@@ -51,7 +51,8 @@ def call_gemini_changelog(api_key: str, package: str, old_ver: str, new_ver: str
         "tools": [{"google_search": {}}],
         "generationConfig": {
             "temperature": 0.1,
-            "maxOutputTokens": 1536,
+            "maxOutputTokens": 2048,
+            "thinkingConfig": {"thinkingLevel": "LOW"},
         },
     }
     data = None

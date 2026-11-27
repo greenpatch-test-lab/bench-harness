@@ -166,6 +166,7 @@ def call_gemini_refactor(
         "generationConfig": {
             "temperature": 0.1,
             "maxOutputTokens": max_out,
+            "thinkingConfig": {"thinkingLevel": "LOW" if loop_num == 1 else "MEDIUM"},
         },
     }
 

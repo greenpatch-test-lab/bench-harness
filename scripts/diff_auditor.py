@@ -43,7 +43,8 @@ def audit_patch(api_key: str, patch_text: str, pr_title: str, packages: str) -> 
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": 0.0,
-            "maxOutputTokens": 1024,
+            "maxOutputTokens": 2048,
+            "thinkingConfig": {"thinkingLevel": "LOW"},
         },
     }
     data = None
