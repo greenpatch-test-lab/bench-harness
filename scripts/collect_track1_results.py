@@ -41,6 +41,8 @@ def main() -> None:
 
     for run_id in sys.argv[2:]:
         d = tmp_dl / run_id
+        if d.exists():
+            shutil.rmtree(d, ignore_errors=True)
         d.mkdir(parents=True, exist_ok=True)
         subprocess.run(
             ["gh", "run", "download", run_id, "--repo", "greenpatch-test-lab/bench-harness", "--dir", str(d)],

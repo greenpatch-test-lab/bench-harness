@@ -143,21 +143,25 @@ function main() {
       continue;
     }
 
-    // Inspect imports & require() calls via ts-morph AST
+    // Inspect imports & require() calls via ts-morph AST (guard template/malformed TS files)
     const specifiers: string[] = [];
     for (const imp of sf.getImportDeclarations()) {
-      specifiers.push(imp.getModuleSpecifierValue());
+      try { specifiers.push(imp.getModuleSpecifierValue()); } catch { /* template syntax */ }
     }
     for (const exp of sf.getExportDeclarations()) {
-      const mod = exp.getModuleSpecifierValue();
-      if (mod) specifiers.push(mod);
+      try {
+        const mod = exp.getModuleSpecifierValue();
+        if (mod) specifiers.push(mod);
+      } catch { /* template syntax */ }
     }
     for (const call of sf.getDescendantsOfKind(SyntaxKind.CallExpression)) {
-      const exprText = call.getExpression().getText();
-      if (exprText === "require" || exprText === "import") {
-        const arg0 = call.getArguments()[0];
-        if (arg0) specifiers.push(arg0.getText().replace(/^['"]|['"]$/g, ""));
-      }
+      try {
+        const exprText = call.getExpression().getText();
+        if (exprText === "require" || exprText === "import") {
+          const arg0 = call.getArguments()[0];
+          if (arg0) specifiers.push(arg0.getText().replace(/^['"]|['"]$/g, ""));
+        }
+      } catch { /* ignore */ }
     }
 
     for (const pkg of pkgs) {
