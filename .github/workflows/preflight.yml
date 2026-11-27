@@ -30,12 +30,12 @@ jobs:
           slim = [
             {
               "idx": i,
-              "fork_repo": item["fork_repo"],
+              "fork_repo": item.get("fork_repo", ""),
               "upstream_repo": item["repo"],
               "pr_number": item["pr_number"],
-              "default_branch": item["default_branch"],
-              "pr_branch": item["fork_pr_branch"],
-              "lockfile": item["lockfile"],
+              "default_branch": item.get("default_branch", "main"),
+              "pr_branch": item.get("fork_pr_branch", ""),
+              "lockfile": item.get("lockfile", ""),
               "ecosystem": "${{ inputs.ecosystem }}",
             }
             for i, item in enumerate(items)
@@ -77,8 +77,23 @@ jobs:
             local branch="$1"
             local label="$2"
             rm -rf "/tmp/clean-${label}" "/tmp/cache-${label}"
-            git clone --depth 1 --branch "${branch}" "https://github.com/${FORK_REPO}.git" "/tmp/clean-${label}" >/tmp/clone_${label}.log 2>&1
-            if [[ $? -ne 0 ]]; then echo 91; return; fi
+            if [[ -n "${FORK_REPO}" && -n "${branch}" ]]; then
+              git clone --depth 1 --branch "${branch}" "https://github.com/${FORK_REPO}.git" "/tmp/clean-${label}" >/tmp/clone_${label}.log 2>&1
+              if [[ $? -ne 0 ]]; then echo 91; return; fi
+            else
+              # Read-only Day-1 Pre-Flight checkout (ZERO mutations; winners are forked into greenpatch-test-lab/* afterwards)
+              if [[ "${label}" == "main" ]]; then
+                git clone --depth 1 --branch "${DEFAULT_BRANCH}" "https://github.com/${UPSTREAM_REPO}.git" "/tmp/clean-${label}" >/tmp/clone_${label}.log 2>&1
+                if [[ $? -ne 0 ]]; then echo 91; return; fi
+              else
+                git clone --depth 1 --branch "${DEFAULT_BRANCH}" "https://github.com/${UPSTREAM_REPO}.git" "/tmp/clean-${label}" >/tmp/clone_${label}.log 2>&1
+                if [[ $? -ne 0 ]]; then echo 91; return; fi
+                git -C "/tmp/clean-${label}" fetch --depth 1 origin "pull/${PR_NUMBER}/head:pr-head" >>/tmp/clone_${label}.log 2>&1
+                if [[ $? -ne 0 ]]; then echo 92; return; fi
+                git -C "/tmp/clean-${label}" checkout -q pr-head >>/tmp/clone_${label}.log 2>&1
+                if [[ $? -ne 0 ]]; then echo 93; return; fi
+              fi
+            fi
             rm -rf "/tmp/clean-${label}/.github"
             git -C "/tmp/clean-${label}" remote remove origin
             bash scripts/phase3a_cache.sh "/tmp/clean-${label}" "${ECOSYSTEM}" "/tmp/cache-${label}" >/tmp/p3a_${label}.log 2>&1
