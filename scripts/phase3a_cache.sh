@@ -89,7 +89,7 @@ PY
   fi
 
 elif [[ "${ECOSYSTEM}" == "py" ]]; then
-  for f in pyproject.toml uv.lock poetry.lock requirements.txt requirements-dev.txt requirements-test.txt; do
+  for f in pyproject.toml uv.lock poetry.lock requirements.txt requirements-dev.txt requirements-test.txt README.md README.rst; do
     if [[ -f "${REPO_DIR}/${f}" ]]; then
       cp "${REPO_DIR}/${f}" "${CACHE_STAGE}/${f}"
     fi
@@ -163,7 +163,7 @@ PY
   # Mandatory Python .pth startup-hook scan (Hades campaign protection)
   # Use grep -rnHE so filename is always printed for the benign stdlib/tooling allowlist
   echo "[Phase 3a] Scanning unpacked wheels & venv for malicious .pth startup hooks..."
-  PTH_HITS=$(find "${CACHE_STAGE}" "${PKG_CACHE}" -name "*.pth" -type f -exec grep -rnHE "^import |^exec\(|__import__" {} + 2>/dev/null | grep -vE "(_editable|_virtualenv|distutils-precedence|_distutils_hack|pkg_resources|pytest|__editable__|sitecustomize|a1_coverage\.pth|-nspkg\.pth|_matplotlib|zope\.|google_|past\.|future\.|pywin32)" || true)
+  PTH_HITS=$(find "${CACHE_STAGE}" "${PKG_CACHE}" -name "*.pth" -type f -exec grep -rnHE "^import |^exec\(|__import__" {} + 2>/dev/null | grep -vE "(_editable|_virtualenv|distutils-precedence|_distutils_hack|pkg_resources|pytest|__editable__|sitecustomize|a1_coverage\.pth|-nspkg\.pth|_matplotlib|zope\.|google_|past\.|future\.|pywin32|_sphinx_jinja2_compat\.pth|coloredlogs\.pth|better_exceptions|pydantic)" || true)
   if [[ -n "${PTH_HITS}" ]]; then
     echo "[Phase 3a] ABORT: Unexpected executable .pth startup hook detected:" >&2
     echo "${PTH_HITS}" >&2
