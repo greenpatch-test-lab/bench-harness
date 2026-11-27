@@ -7,23 +7,26 @@ NEVER pushes to or mutates any upstream repository.
 """
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import os
 import re
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 ORG = "greenpatch-test-lab"
+LOCK = threading.Lock()
 
 
 def load_keys() -> tuple[str, str]:
     kf = Path(r"e:\market research\keys.txt")
     lab = pub = ""
-    for line in kf.read_text(encoding="utf-8").splitlines():
+    for line in kf.read_text(encoding="utf-8-sig").splitlines():
         m1 = re.match(r"^GREENPATCH_LAB_PAT\s+(\S+)", line.strip())
         if m1:
             lab = m1.group(1)
@@ -63,115 +66,114 @@ def gh_api(method: str, path: str, token: str, body: dict | None = None) -> tupl
 
 
 def extract_pkg_and_versions(pr_title: str) -> tuple[str, str, str]:
-    # Dependabot: "bump <pkg> from <old> to <new>"
     m = re.search(r"bump\s+([^\s]+)\s+from\s+([^\s]+)\s+to\s+([^\s]+)", pr_title, re.IGNORECASE)
     if m:
         return m.group(1), m.group(2), m.group(3)
-    # Renovate: "update dependency <pkg> to v<new>"
     m2 = re.search(r"update\s+(?:dependency\s+)?([^\s]+)\s+to\s+v?([^\s]+)", pr_title, re.IGNORECASE)
     if m2:
         return m2.group(1), "current", m2.group(2)
     return "dependency", "current", "target"
 
 
-def fork_and_mirror(cands: list[dict], ecosystem: str, lab_pat: str, limit: int) -> list[dict]:
-    mirrored: list[dict] = []
-    for item in cands[:limit]:
-        upstream = item["repo"]
-        pr_num = int(item["pr_number"])
-        safe_fork_name = re.sub(r"[^A-Za-z0-9_.-]+", "-", f"gp-{ecosystem}-{upstream.replace('/', '-')}")[:95]
-        fork_full = f"{ORG}/{safe_fork_name}"
+def process_one(item: dict, ecosystem: str, lab_pat: str) -> dict | None:
+    upstream = item["repo"]
+    pr_num = int(item["pr_number"])
+    safe_fork_name = re.sub(r"[^A-Za-z0-9_.-]+", "-", f"gp-{ecosystem}-{upstream.replace('/', '-')}")[:95]
+    fork_full = f"{ORG}/{safe_fork_name}"
 
-        # 1. Create fork into greenpatch-test-lab via authenticated `gh` CLI (never pushes upstream)
-        status, existing = gh_api("GET", f"/repos/{fork_full}", lab_pat)
-        if status != 200:
-            r = subprocess.run(
-                [
-                    "gh", "api", "-X", "POST", f"/repos/{upstream}/forks",
-                    "-f", f"organization={ORG}",
-                    "-f", f"name={safe_fork_name}",
-                    "-F", "default_branch_only=false",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=45,
-            )
-            if r.returncode != 0:
-                print(f"[fork-skip] {upstream}: {r.stderr.strip()[:160]}", file=sys.stderr)
-                continue
-            # Wait briefly for fork readiness
-            for _ in range(10):
-                st, _ = gh_api("GET", f"/repos/{fork_full}", lab_pat)
-                if st == 200:
-                    break
-                time.sleep(2)
+    status, _ = gh_api("GET", f"/repos/{fork_full}", lab_pat)
+    if status != 200:
+        r = subprocess.run(
+            [
+                "gh", "api", "-X", "POST", f"/repos/{upstream}/forks",
+                "-f", f"organization={ORG}",
+                "-f", f"name={safe_fork_name}",
+                "-F", "default_branch_only=false",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=45,
+        )
+        if r.returncode != 0:
+            with LOCK:
+                print(f"[fork-skip] {upstream}: {r.stderr.strip()[:140]}", file=sys.stderr, flush=True)
+            return None
+        for _ in range(12):
+            st, _ = gh_api("GET", f"/repos/{fork_full}", lab_pat)
+            if st == 200:
+                break
+            time.sleep(2)
 
-        # 2. Explicitly disable GitHub Actions on the fork repo (Directive 1.1)
-        gh_api("PUT", f"/repos/{fork_full}/actions/permissions", lab_pat, {"enabled": False})
+    # Explicitly disable GitHub Actions on every fork repo (Directive 1.1)
+    gh_api("PUT", f"/repos/{fork_full}/actions/permissions", lab_pat, {"enabled": False})
 
-        # 3. Mirror the upstream PR head commit into a fork-local branch strictly inside greenpatch-test-lab/*
-        fork_pr_branch = f"gp-pr-{pr_num}"
-        # Use ephemeral bare git fetch from public upstream (read-only HTTPS) and push ONLY to greenpatch-test-lab/* using GREENPATCH_LAB_PAT
-        tmp_bare = Path(os.environ.get("TEMP", r"C:\Temp")) / f"gp_mirror_{safe_fork_name}"
-        if tmp_bare.exists():
-            subprocess.run(["cmd", "/c", "rmdir", "/s", "/q", str(tmp_bare)], capture_output=True)
-        tmp_bare.mkdir(parents=True, exist_ok=True)
-        try:
-            subprocess.run(["git", "init", "--bare", "-q"], cwd=tmp_bare, check=True, timeout=20)
-            # Fetch PR head read-only from public GitHub
-            f_res = subprocess.run(
-                ["git", "fetch", "--depth=1", f"https://github.com/{upstream}.git", f"refs/pull/{pr_num}/head:refs/heads/{fork_pr_branch}"],
-                cwd=tmp_bare,
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-            if f_res.returncode != 0:
-                print(f"[fetch-pr-skip] {upstream}#{pr_num}: {f_res.stderr.strip()[:140]}", file=sys.stderr)
-                continue
-            # Push ONLY to greenpatch-test-lab/* authenticated strictly with GREENPATCH_LAB_PAT
-            p_res = subprocess.run(
-                ["git", "push", "-f", f"https://x-access-token:{lab_pat}@github.com/{fork_full}.git", f"refs/heads/{fork_pr_branch}:refs/heads/{fork_pr_branch}"],
-                cwd=tmp_bare,
-                capture_output=True,
-                text=True,
-                timeout=60,
-            )
-            if p_res.returncode != 0:
-                print(f"[push-fork-skip] {fork_full}: {p_res.stderr.strip()[:140]}", file=sys.stderr)
-                continue
-        finally:
-            subprocess.run(["cmd", "/c", "rmdir", "/s", "/q", str(tmp_bare)], capture_output=True)
+    fork_pr_branch = f"gp-pr-{pr_num}"
+    tmp_bare = Path(os.environ.get("TEMP", r"C:\Temp")) / f"gp_mirror_{safe_fork_name}_{os.getpid()}"
+    if tmp_bare.exists():
+        subprocess.run(["cmd", "/c", "rmdir", "/s", "/q", str(tmp_bare)], capture_output=True)
+    tmp_bare.mkdir(parents=True, exist_ok=True)
+    try:
+        subprocess.run(["git", "init", "--bare", "-q"], cwd=tmp_bare, check=True, timeout=20)
+        f_res = subprocess.run(
+            ["git", "fetch", "--depth=1", f"https://github.com/{upstream}.git", f"refs/pull/{pr_num}/head:refs/heads/{fork_pr_branch}"],
+            cwd=tmp_bare,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if f_res.returncode != 0:
+            with LOCK:
+                print(f"[fetch-pr-skip] {upstream}#{pr_num}: {f_res.stderr.strip()[:120]}", file=sys.stderr, flush=True)
+            return None
+        # Push strictly to greenpatch-test-lab/* using GREENPATCH_LAB_PAT
+        p_res = subprocess.run(
+            ["git", "push", "-f", f"https://x-access-token:{lab_pat}@github.com/{fork_full}.git", f"refs/heads/{fork_pr_branch}:refs/heads/{fork_pr_branch}"],
+            cwd=tmp_bare,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if p_res.returncode != 0:
+            with LOCK:
+                print(f"[push-fork-skip] {fork_full}: {p_res.stderr.strip()[:120]}", file=sys.stderr, flush=True)
+            return None
+    finally:
+        subprocess.run(["cmd", "/c", "rmdir", "/s", "/q", str(tmp_bare)], capture_output=True)
 
-        pkg, old_v, new_v = extract_pkg_and_versions(item.get("pr_title", ""))
-        enriched = {
-            **item,
-            "ecosystem": ecosystem,
-            "fork_repo": fork_full,
-            "fork_name": safe_fork_name,
-            "fork_pr_branch": fork_pr_branch,
-            "upgraded_package": pkg,
-            "old_version": old_v,
-            "new_version": new_v,
-        }
-        mirrored.append(enriched)
-        print(f"[forked+mirrored] {len(mirrored):02d} {fork_full} (branch={fork_pr_branch}, actions=DISABLED)", flush=True)
-        time.sleep(0.5)
-
-    return mirrored
+    pkg, old_v, new_v = extract_pkg_and_versions(item.get("pr_title", ""))
+    return {
+        **item,
+        "ecosystem": ecosystem,
+        "fork_repo": fork_full,
+        "fork_name": safe_fork_name,
+        "fork_pr_branch": fork_pr_branch,
+        "upgraded_package": pkg,
+        "old_version": old_v,
+        "new_version": new_v,
+    }
 
 
 def main() -> None:
     lab_pat, _ = load_keys()
     eco = sys.argv[1]
-    limit = int(sys.argv[2]) if len(sys.argv) > 2 else 40
+    limit = int(sys.argv[2]) if len(sys.argv) > 2 else 42
     hdir = Path(r"e:\market research\bench-harness\harvest")
     src = hdir / f"candidates_{eco}_filtered.json"
-    cands = json.loads(src.read_text(encoding="utf-8"))
-    out = fork_and_mirror(cands, eco, lab_pat, limit)
+    cands = json.loads(src.read_text(encoding="utf-8"))[:limit]
+
+    mirrored: list[dict] = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        futs = [pool.submit(process_one, c, eco, lab_pat) for c in cands]
+        for fut in concurrent.futures.as_completed(futs):
+            res = fut.result()
+            if res:
+                mirrored.append(res)
+                with LOCK:
+                    print(f"[forked+mirrored] {len(mirrored):02d}/{len(cands)} {res['fork_repo']} ({res['fork_pr_branch']})", flush=True)
+
     out_file = hdir / f"preflight_batch_{eco}.json"
-    out_file.write_text(json.dumps(out, indent=2), encoding="utf-8")
-    print(f"FORK_MIRROR_DONE: eco={eco}, count={len(out)}, saved={out_file}")
+    out_file.write_text(json.dumps(mirrored, indent=2), encoding="utf-8")
+    print(f"FORK_MIRROR_DONE: eco={eco}, count={len(mirrored)}, saved={out_file}", flush=True)
 
 
 if __name__ == "__main__":
