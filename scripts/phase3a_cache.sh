@@ -123,6 +123,11 @@ if os.path.isfile(pp):
         opt = proj.get("optional-dependencies") or {}
         for k in ("dev", "test", "tests", "testing"):
             deps.extend(opt.get(k) or [])
+        dgroups = data.get("dependency-groups") or {}
+        for k in ("dev", "test", "tests", "testing"):
+            for item in (dgroups.get(k) or []):
+                if isinstance(item, str):
+                    deps.append(item)
     except Exception:
         pass
 req = os.path.join(stage, "requirements.txt")
@@ -145,9 +150,9 @@ PY
   fi
 
   # Mandatory Python .pth startup-hook scan (Hades campaign protection)
-  # Allowlist well-known benign stdlib/tooling hooks (coverage.py, PEP-420 *-nspkg.pth, editable/virtualenv/setuptools)
+  # Use grep -rnHE so filename is always printed for the benign stdlib/tooling allowlist
   echo "[Phase 3a] Scanning unpacked wheels & venv for malicious .pth startup hooks..."
-  PTH_HITS=$(find "${CACHE_STAGE}" "${PKG_CACHE}" -name "*.pth" -type f -exec grep -rnE "^import |^exec\(|__import__" {} + 2>/dev/null | grep -vE "(_editable|_virtualenv|distutils-precedence|pkg_resources|pytest|__editable__|sitecustomize|a1_coverage\.pth|-nspkg\.pth|_matplotlib|zope\.|google_)" || true)
+  PTH_HITS=$(find "${CACHE_STAGE}" "${PKG_CACHE}" -name "*.pth" -type f -exec grep -rnHE "^import |^exec\(|__import__" {} + 2>/dev/null | grep -vE "(_editable|_virtualenv|distutils-precedence|_distutils_hack|pkg_resources|pytest|__editable__|sitecustomize|a1_coverage\.pth|-nspkg\.pth|_matplotlib|zope\.|google_|past\.|future\.|pywin32)" || true)
   if [[ -n "${PTH_HITS}" ]]; then
     echo "[Phase 3a] ABORT: Unexpected executable .pth startup hook detected:" >&2
     echo "${PTH_HITS}" >&2

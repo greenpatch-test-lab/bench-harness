@@ -35,7 +35,7 @@ fi
 
 if [[ "${ECOSYSTEM}" == "ts" ]]; then
   if [[ -f "${EPHEMERAL_DIR}/pnpm-lock.yaml" ]]; then
-    INNER_CMD='PNPM_BIN=""; for p in /pkg-cache/pnpm-cli/bin/pnpm.cjs /pkg-cache/pnpm-cli/dist/pnpm.cjs; do [ -f "$p" ] && PNPM_BIN="$p" && break; done; if [ ! -d /workspace/node_modules ] && [ -n "$PNPM_BIN" ]; then node "$PNPM_BIN" install --offline --ignore-scripts --store-dir /pkg-cache/pnpm-store; fi && if [ -n "$PNPM_BIN" ]; then timeout -k 10s 180s node "$PNPM_BIN" test; else timeout -k 10s 180s npm test; fi'
+    INNER_CMD='mkdir -p /tmp/bin; PNPM_BIN=""; for p in /pkg-cache/pnpm-cli/bin/pnpm.cjs /pkg-cache/pnpm-cli/dist/pnpm.cjs; do [ -f "$p" ] && PNPM_BIN="$p" && break; done; if [ -n "$PNPM_BIN" ]; then printf "#!/bin/sh\nexec node \"%s\" \"\$@\"\n" "$PNPM_BIN" > /tmp/bin/pnpm && chmod +x /tmp/bin/pnpm; fi; export PATH="/tmp/bin:$PATH"; if [ ! -d /workspace/node_modules ] && [ -n "$PNPM_BIN" ]; then pnpm install --offline --ignore-scripts --store-dir /pkg-cache/pnpm-store; fi && if [ -n "$PNPM_BIN" ]; then timeout -k 10s 180s pnpm test; else timeout -k 10s 180s npm test; fi'
   else
     # Only pass --watchAll=false to Jest / react-scripts (vitest/mocha/node --test fail on unknown --watchAll; CI=true disables watch)
     TEST_EXTRA=""
