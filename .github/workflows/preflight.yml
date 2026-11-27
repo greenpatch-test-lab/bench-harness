@@ -1,0 +1,123 @@
+name: Track 1 Day-1 Air-Gapped Pre-Flight ($0 LLM)
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_file:
+        description: "Path to candidate JSON batch (e.g. harvest/preflight_batch_ts.json)"
+        required: true
+        type: string
+      ecosystem:
+        description: "ts or py"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.load.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: load
+        run: |
+          python3 - "${{ inputs.batch_file }}" <<'PY'
+          import json, os, sys
+          items = json.load(open(sys.argv[1]))
+          slim = [
+            {
+              "idx": i,
+              "fork_repo": item["fork_repo"],
+              "upstream_repo": item["repo"],
+              "pr_number": item["pr_number"],
+              "default_branch": item["default_branch"],
+              "pr_branch": item["fork_pr_branch"],
+              "lockfile": item["lockfile"],
+              "ecosystem": "${{ inputs.ecosystem }}",
+            }
+            for i, item in enumerate(items)
+          ]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("matrix=" + json.dumps({"include": slim}) + "\n")
+          PY
+
+  preflight:
+    needs: prepare-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 22, pnpm & uv
+        run: |
+          npm install -g pnpm@10
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Pre-Flight Baseline main (exit 0 offline) & PR branch (exit != 0 offline)
+        env:
+          FORK_REPO: ${{ matrix.fork_repo }}
+          DEFAULT_BRANCH: ${{ matrix.default_branch }}
+          PR_BRANCH: ${{ matrix.pr_branch }}
+          ECOSYSTEM: ${{ matrix.ecosystem }}
+          UPSTREAM_REPO: ${{ matrix.upstream_repo }}
+          PR_NUMBER: ${{ matrix.pr_number }}
+        run: |
+          set +e
+          mkdir -p /tmp/pf-results
+
+          run_branch_check() {
+            local branch="$1"
+            local label="$2"
+            rm -rf /tmp/clean-repo /tmp/pkg-cache
+            git clone --depth 1 --branch "${branch}" "https://github.com/${FORK_REPO}.git" /tmp/clean-repo >/tmp/clone_${label}.log 2>&1
+            if [[ $? -ne 0 ]]; then echo 91; return; fi
+            # Mandatory Checkout Sanitization (Directive 1.2)
+            rm -rf /tmp/clean-repo/.github
+            git -C /tmp/clean-repo remote remove origin
+
+            # Phase 3a: Online cache fetch with 72h cooldown & --ignore-scripts (target code unmounted)
+            bash scripts/phase3a_cache.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache >/tmp/p3a_${label}.log 2>&1
+            local p3a=$?
+            if [[ $p3a -ne 0 ]]; then echo "30${p3a}"; return; fi
+
+            # Phase 3b: Throwaway /tmp/ephemeral-run in Docker --network none
+            bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache "" "/tmp/test_${label}.log"
+            echo $?
+          }
+
+          MAIN_EXIT=$(run_branch_check "${DEFAULT_BRANCH}" "main")
+          PR_EXIT=99
+          if [[ "${MAIN_EXIT}" == "0" ]]; then
+            PR_EXIT=$(run_branch_check "${PR_BRANCH}" "pr")
+          fi
+
+          SAFE_NAME=$(echo "${UPSTREAM_REPO}" | tr '/' '_')
+          python3 - <<PY
+          import json
+          out = {
+            "upstream_repo": "${UPSTREAM_REPO}",
+            "fork_repo": "${FORK_REPO}",
+            "pr_number": int("${PR_NUMBER}"),
+            "ecosystem": "${ECOSYSTEM}",
+            "main_exit_code": int("${MAIN_EXIT}"),
+            "pr_exit_code": int("${PR_EXIT}"),
+            "clean_baseline_eligible": (int("${MAIN_EXIT}") == 0 and int("${PR_EXIT}") != 0 and int("${PR_EXIT}") < 300),
+            "main_log_tail": open("/tmp/test_main.log").read()[-1200:] if __import__("os").path.exists("/tmp/test_main.log") else open("/tmp/p3a_main.log").read()[-1200:] if __import__("os").path.exists("/tmp/p3a_main.log") else "",
+            "pr_log_tail": open("/tmp/test_pr.log").read()[-1200:] if __import__("os").path.exists("/tmp/test_pr.log") else "",
+          }
+          open("/tmp/pf-results/${SAFE_NAME}.json", "w").write(json.dumps(out, indent=2))
+          print(json.dumps({k: v for k, v in out.items() if not k.endswith("_tail")}))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preflight-${{ matrix.ecosystem }}-${{ matrix.idx }}
+          path: /tmp/pf-results/*.json
+          retention-days: 7

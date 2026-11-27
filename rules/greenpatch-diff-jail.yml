@@ -1,0 +1,108 @@
+# First-Party GreenPatch Diff Jail Rules (100% First-Party Custom YAML for Semgrep CE LGPL-2.1)
+# NEVER use --config=auto or p/default (Semgrep Rules License v1.0 prohibits commercial use).
+# Invoke strictly as: semgrep scan --config ./rules/greenpatch-diff-jail.yml --metrics=off
+rules:
+  - id: greenpatch-js-eval-or-function
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: "Diff Jail: dynamic code execution (eval / new Function) is prohibited in dependency-upgrade patches."
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+      - pattern: Function(...)
+
+  - id: greenpatch-js-shell-exec
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: "Diff Jail: child_process shell execution added in patch is prohibited."
+    pattern-either:
+      - pattern: child_process.exec(...)
+      - pattern: child_process.execSync(...)
+      - pattern: require("child_process").exec(...)
+      - pattern: require("child_process").execSync(...)
+      - pattern: execSync(...)
+
+  - id: greenpatch-js-tls-bypass
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: "Diff Jail: disabling TLS certificate verification is prohibited."
+    pattern-either:
+      - pattern: "{ ..., rejectUnauthorized: false, ... }"
+      - pattern: process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+
+  - id: greenpatch-js-env-exfil
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: "Diff Jail: serializing or transmitting full process.env is prohibited."
+    pattern-either:
+      - pattern: JSON.stringify(process.env)
+      - pattern: 'fetch($URL, { ..., body: $BODY, ... })'
+
+  - id: greenpatch-js-skipped-tests
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: "Diff Jail: skipping or disabling test assertions to force exit 0 is prohibited."
+    pattern-either:
+      - pattern: it.skip(...)
+      - pattern: test.skip(...)
+      - pattern: describe.skip(...)
+      - pattern: xit(...)
+      - pattern: xtest(...)
+      - pattern: xdescribe(...)
+
+  - id: greenpatch-py-eval-exec
+    languages: [python]
+    severity: ERROR
+    message: "Diff Jail: dynamic eval/exec/compile/__import__ in Python patch is prohibited."
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+      - pattern: __import__(...)
+
+  - id: greenpatch-py-shell-injection
+    languages: [python]
+    severity: ERROR
+    message: "Diff Jail: shell=True or os.system/os.popen added in Python patch is prohibited."
+    pattern-either:
+      - pattern: os.system(...)
+      - pattern: os.popen(...)
+      - pattern: subprocess.run(..., shell=True, ...)
+      - pattern: subprocess.Popen(..., shell=True, ...)
+      - pattern: subprocess.call(..., shell=True, ...)
+      - pattern: subprocess.check_output(..., shell=True, ...)
+
+  - id: greenpatch-py-tls-bypass
+    languages: [python]
+    severity: ERROR
+    message: "Diff Jail: disabling SSL/TLS verification is prohibited."
+    pattern-either:
+      - pattern: requests.$M(..., verify=False, ...)
+      - pattern: httpx.$M(..., verify=False, ...)
+      - pattern: ssl._create_unverified_context(...)
+
+  - id: greenpatch-py-skipped-tests
+    languages: [python]
+    severity: ERROR
+    message: "Diff Jail: skipping or neutering Python tests to force exit 0 is prohibited."
+    pattern-either:
+      - pattern: |
+          @pytest.mark.skip(...)
+          def $F(...): ...
+      - pattern: |
+          @pytest.mark.skip
+          def $F(...): ...
+      - pattern: |
+          @pytest.mark.xfail(...)
+          def $F(...): ...
+      - pattern: |
+          @unittest.skip(...)
+          def $F(...): ...
+      - pattern: pytest.skip(...)
+
+  - id: greenpatch-py-env-exfil
+    languages: [python]
+    severity: ERROR
+    message: "Diff Jail: dumping full os.environ is prohibited."
+    pattern-either:
+      - pattern: dict(os.environ)
+      - pattern: json.dumps(dict(os.environ))

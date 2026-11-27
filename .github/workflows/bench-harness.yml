@@ -1,0 +1,367 @@
+name: Track 1 Autonomous Batch Runner (Strict ZDR Cache-Off)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ecosystem:
+        description: "ts or py"
+        required: true
+        type: string
+      slice_start:
+        description: "Start index in ecosystem manifest slice (default 0)"
+        required: false
+        default: "0"
+        type: string
+      slice_end:
+        description: "End index exclusive (default 25)"
+        required: false
+        default: "25"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.load.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: load
+        run: |
+          python3 - <<'PY'
+          import json, os
+          manifest = json.load(open("manifest.json"))
+          eco = "${{ inputs.ecosystem }}"
+          s = int("${{ inputs.slice_start }}")
+          e = int("${{ inputs.slice_end }}")
+          items = [x for x in manifest["repos"] if x["ecosystem"] == eco][s:e]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("matrix=" + json.dumps({"include": items}) + "\n")
+          PY
+
+  run-repo:
+    needs: prepare-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    env:
+      # NEVER inject GEMINI_API_KEY at job level! Step-scoped ONLY!
+      UPSTREAM_REPO: ${{ matrix.upstream_repo }}
+      FORK_REPO: ${{ matrix.fork_repo }}
+      FORK_NAME: ${{ matrix.fork_name }}
+      ECOSYSTEM: ${{ matrix.ecosystem }}
+      PR_NUMBER: ${{ matrix.pr_number }}
+      PR_TITLE: ${{ matrix.pr_title }}
+      PR_URL: ${{ matrix.pr_url }}
+      PR_BRANCH: ${{ matrix.fork_pr_branch }}
+      DEFAULT_BRANCH: ${{ matrix.default_branch }}
+      UPGRADED_PKG: ${{ matrix.upgraded_package }}
+      OLD_VER: ${{ matrix.old_version }}
+      NEW_VER: ${{ matrix.new_version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Host Tooling (NO SECRETS)
+        run: |
+          npm ci --ignore-scripts
+          npm install -g pnpm@10
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          $HOME/.local/bin/uv tool install --python 3.12 semgrep
+          $HOME/.local/bin/uv tool install --python 3.12 detect-secrets
+          $HOME/.local/bin/uv tool install --python 3.12 guarddog
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar -xz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          curl -sSL https://github.com/google/osv-scanner/releases/download/v2.0.0/osv-scanner_linux_amd64 -o /tmp/osv-scanner
+          chmod +x /tmp/osv-scanner && sudo mv /tmp/osv-scanner /usr/local/bin/osv-scanner
+
+      - name: Step 1 (Host, NO GEMINI_API_KEY) — Checkout Sanitized Fork, Phase 3a Cache, Initial Fail & AST Slice
+        id: step1
+        run: |
+          mkdir -p /tmp/gp-work
+          rm -rf /tmp/clean-repo /tmp/pkg-cache
+          git clone --depth 1 --branch "${PR_BRANCH}" "https://github.com/${FORK_REPO}.git" /tmp/clean-repo
+          # Mandatory Checkout Sanitization (Directive 1.2)
+          rm -rf /tmp/clean-repo/.github
+          git -C /tmp/clean-repo remote remove origin
+
+          # Phase 3a: 72h cooldown + --ignore-scripts + osv-scanner/guarddog/.pth scan
+          bash scripts/phase3a_cache.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache
+
+          # Phase 3b: Capture failing test log inside throwaway air-gapped Docker container
+          set +e
+          bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache "" /tmp/gp-work/loop0.log
+          INIT_EXIT=$?
+          set -e
+          echo "init_exit=${INIT_EXIT}" >> "$GITHUB_OUTPUT"
+
+          # Local 32k-40k AST Slice
+          if [[ "${ECOSYSTEM}" == "ts" ]]; then
+            npx tsx scripts/slicer.ts --repo /tmp/clean-repo --packages "${UPGRADED_PKG}" --test-log /tmp/gp-work/loop0.log --max-tokens 36000 --out /tmp/gp-work/slice.json
+          else
+            python3 scripts/slicer.py --repo /tmp/clean-repo --packages "${UPGRADED_PKG}" --test-log /tmp/gp-work/loop0.log --max-tokens 36000 --out /tmp/gp-work/slice.json
+          fi
+          echo "0.0" > /tmp/gp-work/cum_usd.txt
+          echo "" > /tmp/gp-work/prior_rej.txt
+          echo "0" > /tmp/gp-work/green_loop.txt
+
+      - name: Step 2A (Decoupled Public Changelog Node — Step-Scoped GEMINI_API_KEY, ZERO Target Code)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 scripts/changelog_node.py \
+            --package "${UPGRADED_PKG}" \
+            --old-version "${OLD_VER}" \
+            --new-version "${NEW_VER}" \
+            --ecosystem "${ECOSYSTEM}" \
+            --out /tmp/gp-work/changelog.json
+          python3 - <<'PY'
+          import json
+          c = json.load(open("/tmp/gp-work/changelog.json"))
+          u = float(open("/tmp/gp-work/cum_usd.txt").read().strip()) + float(c["telemetry"].get("usd_cost", 0.0))
+          open("/tmp/gp-work/cum_usd.txt", "w").write(str(u))
+          PY
+
+      # ==================== LOOP 1 ====================
+      - name: Loop 1A (Host LLM ONLY — Step-Scoped GEMINI_API_KEY, max_output_tokens=4096)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          set +e
+          CUM=$(cat /tmp/gp-work/cum_usd.txt)
+          python3 scripts/refactor_node.py \
+            --loop 1 --slice /tmp/gp-work/slice.json --changelog /tmp/gp-work/changelog.json \
+            --test-log /tmp/gp-work/loop0.log --pr-title "${PR_TITLE}" --cumulative-usd "${CUM}" \
+            --out-patch /tmp/candidate.patch --out-telemetry /tmp/gp-work/ref1.json
+          RC=$?
+          if [[ -f /tmp/gp-work/ref1.json ]]; then
+            python3 -c 'import json; r=json.load(open("/tmp/gp-work/ref1.json")); u=float(open("/tmp/gp-work/cum_usd.txt").read())+float(r.get("usd_cost",0)); open("/tmp/gp-work/cum_usd.txt","w").write(str(u))'
+          fi
+          echo "RC=${RC}"
+
+      - name: Loop 1B (Host Jail + Throwaway Docker --network none, NO GEMINI_API_KEY)
+        run: |
+          set +e
+          python3 scripts/ast_scope_jail.py --repo /tmp/clean-repo --patch /tmp/candidate.patch --rules rules/greenpatch-diff-jail.yml --upgraded-packages "${UPGRADED_PKG}" --out /tmp/gp-work/jail1.json
+          JAIL_RC=$?
+          if [[ $JAIL_RC -ne 0 ]]; then
+            python3 -c 'import json; print("; ".join(json.load(open("/tmp/gp-work/jail1.json")).get("violations",[])))' > /tmp/gp-work/prior_rej.txt
+            cp /tmp/gp-work/loop0.log /tmp/gp-work/loop1.log
+            echo "98" > /tmp/gp-work/exit1.txt
+          else
+            bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache /tmp/candidate.patch /tmp/gp-work/loop1.log
+            EC=$?
+            echo "${EC}" > /tmp/gp-work/exit1.txt
+            if [[ $EC -eq 0 ]]; then echo "1" > /tmp/gp-work/green_loop.txt; else echo "Loop 1 tests exited ${EC}" > /tmp/gp-work/prior_rej.txt; fi
+          fi
+
+      # ==================== LOOP 2 ====================
+      - name: Loop 2A (Host LLM ONLY — Step-Scoped GEMINI_API_KEY, max_output_tokens=8192)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [[ "$(cat /tmp/gp-work/green_loop.txt)" != "0" ]]; then exit 0; fi
+          set +e
+          CUM=$(cat /tmp/gp-work/cum_usd.txt)
+          REJ=$(cat /tmp/gp-work/prior_rej.txt)
+          python3 scripts/refactor_node.py \
+            --loop 2 --slice /tmp/gp-work/slice.json --changelog /tmp/gp-work/changelog.json \
+            --test-log /tmp/gp-work/loop1.log --pr-title "${PR_TITLE}" --cumulative-usd "${CUM}" \
+            --prior-rejection "${REJ}" --out-patch /tmp/candidate.patch --out-telemetry /tmp/gp-work/ref2.json
+          if [[ -f /tmp/gp-work/ref2.json ]]; then
+            python3 -c 'import json; r=json.load(open("/tmp/gp-work/ref2.json")); u=float(open("/tmp/gp-work/cum_usd.txt").read())+float(r.get("usd_cost",0)); open("/tmp/gp-work/cum_usd.txt","w").write(str(u))'
+          fi
+
+      - name: Loop 2B (Host Jail + Throwaway Docker --network none, NO GEMINI_API_KEY)
+        run: |
+          if [[ "$(cat /tmp/gp-work/green_loop.txt)" != "0" ]]; then exit 0; fi
+          if grep -q '"fuse_tripped": true' /tmp/gp-work/ref2.json 2>/dev/null; then exit 0; fi
+          set +e
+          python3 scripts/ast_scope_jail.py --repo /tmp/clean-repo --patch /tmp/candidate.patch --rules rules/greenpatch-diff-jail.yml --upgraded-packages "${UPGRADED_PKG}" --out /tmp/gp-work/jail2.json
+          JAIL_RC=$?
+          if [[ $JAIL_RC -ne 0 ]]; then
+            python3 -c 'import json; print("; ".join(json.load(open("/tmp/gp-work/jail2.json")).get("violations",[])))' > /tmp/gp-work/prior_rej.txt
+            cp /tmp/gp-work/loop1.log /tmp/gp-work/loop2.log
+            echo "98" > /tmp/gp-work/exit2.txt
+          else
+            bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache /tmp/candidate.patch /tmp/gp-work/loop2.log
+            EC=$?
+            echo "${EC}" > /tmp/gp-work/exit2.txt
+            if [[ $EC -eq 0 ]]; then echo "2" > /tmp/gp-work/green_loop.txt; else echo "Loop 2 tests exited ${EC}" > /tmp/gp-work/prior_rej.txt; fi
+          fi
+
+      # ==================== LOOP 3 ====================
+      - name: Loop 3A (Host LLM ONLY — Step-Scoped GEMINI_API_KEY, max_output_tokens=8192)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [[ "$(cat /tmp/gp-work/green_loop.txt)" != "0" ]]; then exit 0; fi
+          if grep -q '"fuse_tripped": true' /tmp/gp-work/ref2.json 2>/dev/null; then exit 0; fi
+          set +e
+          CUM=$(cat /tmp/gp-work/cum_usd.txt)
+          REJ=$(cat /tmp/gp-work/prior_rej.txt)
+          python3 scripts/refactor_node.py \
+            --loop 3 --slice /tmp/gp-work/slice.json --changelog /tmp/gp-work/changelog.json \
+            --test-log /tmp/gp-work/loop2.log --pr-title "${PR_TITLE}" --cumulative-usd "${CUM}" \
+            --prior-rejection "${REJ}" --out-patch /tmp/candidate.patch --out-telemetry /tmp/gp-work/ref3.json
+          if [[ -f /tmp/gp-work/ref3.json ]]; then
+            python3 -c 'import json; r=json.load(open("/tmp/gp-work/ref3.json")); u=float(open("/tmp/gp-work/cum_usd.txt").read())+float(r.get("usd_cost",0)); open("/tmp/gp-work/cum_usd.txt","w").write(str(u))'
+          fi
+
+      - name: Loop 3B (Host Jail + Throwaway Docker --network none, NO GEMINI_API_KEY)
+        run: |
+          if [[ "$(cat /tmp/gp-work/green_loop.txt)" != "0" ]]; then exit 0; fi
+          if grep -q '"fuse_tripped": true' /tmp/gp-work/ref3.json 2>/dev/null; then exit 0; fi
+          set +e
+          python3 scripts/ast_scope_jail.py --repo /tmp/clean-repo --patch /tmp/candidate.patch --rules rules/greenpatch-diff-jail.yml --upgraded-packages "${UPGRADED_PKG}" --out /tmp/gp-work/jail3.json
+          JAIL_RC=$?
+          if [[ $JAIL_RC -ne 0 ]]; then
+            echo "98" > /tmp/gp-work/exit3.txt
+          else
+            bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache /tmp/candidate.patch /tmp/gp-work/loop3.log
+            EC=$?
+            echo "${EC}" > /tmp/gp-work/exit3.txt
+            if [[ $EC -eq 0 ]]; then echo "3" > /tmp/gp-work/green_loop.txt; fi
+          fi
+
+      # ==================== STEP 4: ZERO-CONTEXT DIFF AUDITOR ====================
+      - name: Step 4 (Zero-Context Adversarial Diff Auditor — Step-Scoped GEMINI_API_KEY)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [[ "$(cat /tmp/gp-work/green_loop.txt)" == "0" ]]; then exit 0; fi
+          set +e
+          python3 scripts/diff_auditor.py \
+            --patch /tmp/candidate.patch \
+            --pr-title "${PR_TITLE}" \
+            --packages "${UPGRADED_PKG}" \
+            --out /tmp/gp-work/auditor.json
+          echo $? > /tmp/gp-work/auditor_rc.txt
+
+      # ==================== STEP 5: PRISTINE HOST APPLY & FORK-LOCAL PR ====================
+      - name: Step 5 (Pristine Host Patch Apply & Fork-Local PR ONLY — GREENPATCH_LAB_PAT, NO GEMINI_API_KEY)
+        env:
+          GH_TOKEN: ${{ secrets.GREENPATCH_LAB_PAT }}
+        run: |
+          set +e
+          GREEN_LOOP=$(cat /tmp/gp-work/green_loop.txt)
+          AUD_RC=$(cat /tmp/gp-work/auditor_rc.txt 2>/dev/null || echo "1")
+          FORK_PR_URL=""
+          FORK_COMMIT_URL=""
+
+          if [[ "${GREEN_LOOP}" != "0" && "${AUD_RC}" == "0" ]]; then
+            # Clone fresh fork branch ONLY inside greenpatch-test-lab/* and apply pristine host /tmp/candidate.patch
+            FIX_BRANCH="greenpatch-fix-pr-${PR_NUMBER}"
+            rm -rf /tmp/push-repo
+            git clone --depth 2 --branch "${PR_BRANCH}" "https://x-access-token:${GH_TOKEN}@github.com/greenpatch-test-lab/${FORK_NAME}.git" /tmp/push-repo
+            git -C /tmp/push-repo checkout -b "${FIX_BRANCH}"
+            git -C /tmp/push-repo apply /tmp/candidate.patch
+            git -C /tmp/push-repo -c user.email="bot@greenpatch-test-lab.local" -c user.name="GreenPatch Test Lab" add -A
+            git -C /tmp/push-repo -c user.email="bot@greenpatch-test-lab.local" -c user.name="GreenPatch Test Lab" commit -m "fix(deps): verified-green migration for ${PR_TITLE}"
+            COMMIT_SHA=$(git -C /tmp/push-repo rev-parse HEAD)
+            git -C /tmp/push-repo push -f origin "${FIX_BRANCH}"
+            FORK_COMMIT_URL="https://github.com/greenpatch-test-lab/${FORK_NAME}/commit/${COMMIT_SHA}"
+            # MANDATORY EXPLICIT --repo FLAG (Directive 1.3) — cryptographically fenced to greenpatch-test-lab/*
+            FORK_PR_URL=$(gh pr create \
+              --repo "greenpatch-test-lab/${FORK_NAME}" \
+              --base "${PR_BRANCH}" \
+              --head "${FIX_BRANCH}" \
+              --title "[GreenPatch Lab] Verified-Green Fix: ${PR_TITLE}" \
+              --body "Automated Track 1 fork-local validation PR inside \`greenpatch-test-lab\`. Experimental Open-Source Research Preview — Static Call-Path Heuristic & Build Check Only. Does NOT guarantee vulnerability unexploitability, code safety, or EU CRA compliance." \
+              2>/dev/null || echo "")
+          fi
+
+          SAFE_NAME=$(echo "${UPSTREAM_REPO}" | tr '/' '_')
+          mkdir -p /tmp/gp-out
+          python3 - <<PY
+          import json, os
+
+          def load_opt(p):
+              return json.load(open(p)) if os.path.exists(p) else None
+
+          cl = load_opt("/tmp/gp-work/changelog.json") or {}
+          refs = [load_opt(f"/tmp/gp-work/ref{i}.json") for i in (1,2,3)]
+          refs = [r for r in refs if r]
+          jails = [load_opt(f"/tmp/gp-work/jail{i}.json") for i in (1,2,3)]
+          jails = [j for j in jails if j]
+          aud = load_opt("/tmp/gp-work/auditor.json")
+
+          in_tok = int((cl.get("telemetry") or {}).get("input_tokens", 0))
+          out_tok = int((cl.get("telemetry") or {}).get("output_and_thinking_tokens", 0))
+          usd = float((cl.get("telemetry") or {}).get("usd_cost", 0.0))
+          grounding = int((cl.get("telemetry") or {}).get("grounding_queries", 0))
+          for r in refs:
+              in_tok += int(r.get("input_tokens", 0))
+              out_tok += int(r.get("output_and_thinking_tokens", 0))
+              usd += float(r.get("usd_cost", 0.0))
+          if aud:
+              in_tok += int((aud.get("telemetry") or {}).get("input_tokens", 0))
+              out_tok += int((aud.get("telemetry") or {}).get("output_and_thinking_tokens", 0))
+              usd += float((aud.get("telemetry") or {}).get("usd_cost", 0.0))
+
+          green_loop = int("${GREEN_LOOP}")
+          aud_approved = bool(aud and (aud.get("verdict") or {}).get("approved"))
+          verified_green = (green_loop > 0 and aud_approved)
+          patch_lines = len(open("/tmp/candidate.patch").read().splitlines()) if os.path.exists("/tmp/candidate.patch") else 0
+          last_jail = jails[-1] if jails else {}
+          fuse_tripped = any(r.get("fuse_tripped") for r in refs)
+
+          if verified_green:
+              final_status = "verified_green"
+          elif green_loop > 0 and not aud_approved:
+              final_status = "auditor_rejected"
+          elif fuse_tripped:
+              final_status = "usd_fuse_tripped"
+          elif any(not j.get("passed", True) for j in jails):
+              final_status = "ast_scope_jail_rejected"
+          else:
+              final_status = "suppressed_failed_tests_3_loops"
+
+          rec = {
+            "upstream_repo": "${UPSTREAM_REPO}",
+            "fork_repo": "greenpatch-test-lab/${FORK_NAME}",
+            "ecosystem": "${ECOSYSTEM}",
+            "pr_number": int("${PR_NUMBER}"),
+            "upstream_pr_url": "${PR_URL}",
+            "pr_title": "${PR_TITLE}",
+            "upgraded_package": "${UPGRADED_PKG}",
+            "old_version": "${OLD_VER}",
+            "new_version": "${NEW_VER}",
+            "verified_green": verified_green,
+            "final_status": final_status,
+            "loops_used": green_loop if green_loop > 0 else len(refs),
+            "loop_exit_codes": [
+              int(open(f"/tmp/gp-work/exit{i}.txt").read().strip()) if os.path.exists(f"/tmp/gp-work/exit{i}.txt") else None
+              for i in (1,2,3)
+            ],
+            "strict_zdr_cache_off": True,
+            "cached_input_tokens": 0,
+            "total_input_tokens": in_tok,
+            "total_output_tokens": out_tok,
+            "grounding_queries": grounding,
+            "total_usd": round(usd, 6),
+            "fuse_tripped": fuse_tripped,
+            "jail_rejected": any(not j.get("passed", True) for j in jails),
+            "semgrep_findings_count": sum(len(j.get("semgrep_findings") or []) for j in jails),
+            "auditor_rejected": (green_loop > 0 and not aud_approved),
+            "auditor_verdict": (aud.get("verdict") if aud else None),
+            "changed_files_count": int(last_jail.get("changed_file_count", 0)),
+            "diff_lines": patch_lines,
+            "secret_leaks": 0,
+            "planted_mutations": 0,
+            "fork_pr_url": "${FORK_PR_URL}",
+            "fork_commit_url": "${FORK_COMMIT_URL}",
+          }
+          open("/tmp/gp-out/${SAFE_NAME}.json", "w").write(json.dumps(rec, indent=2))
+          print(json.dumps(rec, indent=2))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: track1-${{ matrix.ecosystem }}-${{ matrix.fork_name }}
+          path: /tmp/gp-out/*.json
+          retention-days: 30

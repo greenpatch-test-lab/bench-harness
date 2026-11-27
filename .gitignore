@@ -1,0 +1,10 @@
+# Never commit secrets or local scratch artifacts
+keys.txt
+*.env
+.env*
+node_modules/
+__pycache__/
+.venv/
+*.pyc
+/tmp/
+harvest/raw_*.json
