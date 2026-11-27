@@ -1,0 +1,393 @@
+[
+  {
+    "repo": "tf8888/crewlore",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 6,
+    "pr_url": "https://github.com/tf8888/crewlore/pull/6",
+    "pr_title": "chore(deps-dev): Update mcp requirement from >=1.0 to >=2.3.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-13T10:47:03Z",
+    "updated_at": "2026-10-13T10:47:13Z"
+  },
+  {
+    "repo": "cacity/ResearchBrain",
+    "language": "Python",
+    "stars": 10,
+    "license": "GPL-3.0",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 12,
+    "pr_url": "https://github.com/cacity/ResearchBrain/pull/12",
+    "pr_title": "Update mcp requirement from <2,>=1.6 to >=1.6,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-17T11:21:36Z",
+    "updated_at": "2026-08-17T11:21:37Z"
+  },
+  {
+    "repo": "jman4162/vehicle-maintenance-planner",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 7,
+    "pr_url": "https://github.com/jman4162/vehicle-maintenance-planner/pull/7",
+    "pr_title": "Update mcp requirement from <2,>=1.10 to >=1.10,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-16T16:09:16Z",
+    "updated_at": "2026-08-16T16:09:16Z"
+  },
+  {
+    "repo": "ryanrodrigues25200525-svg/Openfilings",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 5,
+    "pr_url": "https://github.com/ryanrodrigues25200525-svg/Openfilings/pull/5",
+    "pr_title": "chore(deps): update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-30T14:10:00Z",
+    "updated_at": "2026-10-08T19:17:12Z"
+  },
+  {
+    "repo": "goncaloaguer/unofficial-reddit-ads-mcp",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 5,
+    "pr_url": "https://github.com/goncaloaguer/unofficial-reddit-ads-mcp/pull/5",
+    "pr_title": "build(deps): update mcp requirement from <2,>=1.9 to >=1.9,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-03T16:25:38Z",
+    "updated_at": "2026-09-03T16:25:40Z"
+  },
+  {
+    "repo": "Satanstoy/interview-boss",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "master",
+    "lockfile": "uv.lock",
+    "pr_number": 7,
+    "pr_url": "https://github.com/Satanstoy/interview-boss/pull/7",
+    "pr_title": "build(deps): update mcp requirement from <2,>=1.12.4 to >=1.12.4,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-25T15:47:04Z",
+    "updated_at": "2026-10-17T11:01:59Z"
+  },
+  {
+    "repo": "Lewis-Nield/blue-prism-v7-mcp",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 71,
+    "pr_url": "https://github.com/Lewis-Nield/blue-prism-v7-mcp/pull/71",
+    "pr_title": "Update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-01T02:44:41Z",
+    "updated_at": "2026-08-01T02:44:41Z"
+  },
+  {
+    "repo": "arhamj3/BiblioRAG",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 4,
+    "pr_url": "https://github.com/arhamj3/BiblioRAG/pull/4",
+    "pr_title": "Update mcp requirement from <2,>=1.2 to >=1.2,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-01T10:16:50Z",
+    "updated_at": "2026-08-01T10:16:51Z"
+  },
+  {
+    "repo": "yeaboi-ai/yeaboi.ai",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 335,
+    "pr_url": "https://github.com/yeaboi-ai/yeaboi.ai/pull/335",
+    "pr_title": "chore(deps): update mcp requirement from <2,>=1.9 to >=1.9,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-29T13:22:53Z",
+    "updated_at": "2026-08-29T13:22:54Z"
+  },
+  {
+    "repo": "Saurabhkaran11/wingman",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 13,
+    "pr_url": "https://github.com/Saurabhkaran11/wingman/pull/13",
+    "pr_title": "Bump mcp from 2.1.1 to 2.2.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-11-02T21:44:12Z",
+    "updated_at": "2026-11-02T21:45:04Z"
+  },
+  {
+    "repo": "keboola/component-claude-sdk",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 16,
+    "pr_url": "https://github.com/keboola/component-claude-sdk/pull/16",
+    "pr_title": "chore(deps): bump mcp from 1.27.2 to 1.30.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-19T20:35:47Z",
+    "updated_at": "2026-10-22T18:41:02Z"
+  },
+  {
+    "repo": "motherskitchenblr2/hermes-agent_0118",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 53,
+    "pr_url": "https://github.com/motherskitchenblr2/hermes-agent_0118/pull/53",
+    "pr_title": "chore(deps): bump mcp from 1.26.0 to 1.30.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-19T18:33:57Z",
+    "updated_at": "2026-10-19T18:35:57Z"
+  },
+  {
+    "repo": "RisshabhBhardwaj/Statuta",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 15,
+    "pr_url": "https://github.com/RisshabhBhardwaj/Statuta/pull/15",
+    "pr_title": "build(deps): bump mcp from 2.1.1 to 2.2.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-19T16:38:32Z",
+    "updated_at": "2026-10-19T16:44:32Z"
+  },
+  {
+    "repo": "fernsdavid25/cortex-protocol",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 12,
+    "pr_url": "https://github.com/fernsdavid25/cortex-protocol/pull/12",
+    "pr_title": "ci(deps): bump mcp from 1.28.1 to 1.30.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-19T17:01:50Z",
+    "updated_at": "2026-10-19T17:49:17Z"
+  },
+  {
+    "repo": "joelio/stocky",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 32,
+    "pr_url": "https://github.com/joelio/stocky/pull/32",
+    "pr_title": "deps(deps): Bump mcp from 1.28.1 to 2.3.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-19T21:45:11Z",
+    "updated_at": "2026-10-19T21:48:50Z"
+  },
+  {
+    "repo": "sdrshn-nmbr/brain",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 23,
+    "pr_url": "https://github.com/sdrshn-nmbr/brain/pull/23",
+    "pr_title": "Bump mcp from 2.0.0 to 2.1.1",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-04T00:10:07Z",
+    "updated_at": "2026-10-06T22:40:47Z"
+  },
+  {
+    "repo": "adarshbattu109/polyglot",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "uv.lock",
+    "pr_number": 25,
+    "pr_url": "https://github.com/adarshbattu109/polyglot/pull/25",
+    "pr_title": "chore(deps): bump mcp from 1.29.0 to 2.3.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-12T01:43:27Z",
+    "updated_at": "2026-10-12T01:43:31Z"
+  },
+  {
+    "repo": "rungalileo/galileo-python",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "poetry.lock",
+    "pr_number": 626,
+    "pr_url": "https://github.com/rungalileo/galileo-python/pull/626",
+    "pr_title": "chore(deps): bump mcp from 1.27.0 to 1.27.2",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-16T20:11:06Z",
+    "updated_at": "2026-11-17T01:38:50Z"
+  },
+  {
+    "repo": "mughil/geo-optimizer-skill",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 10,
+    "pr_url": "https://github.com/mughil/geo-optimizer-skill/pull/10",
+    "pr_title": "Update mcp requirement from >=1.0.0 to >=2.3.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-31T14:53:02Z",
+    "updated_at": "2026-10-31T14:54:48Z"
+  },
+  {
+    "repo": "stateset/icommerce-agents",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "master",
+    "lockfile": "pyproject.toml",
+    "pr_number": 11,
+    "pr_url": "https://github.com/stateset/icommerce-agents/pull/11",
+    "pr_title": "Update mcp requirement from <2 to <3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-05T17:47:58Z",
+    "updated_at": "2026-09-05T17:47:58Z"
+  },
+  {
+    "repo": "esphome/device-builder",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 2830,
+    "pr_url": "https://github.com/esphome/device-builder/pull/2830",
+    "pr_title": "deps: update mcp requirement from <2,>=1.26 to >=1.26,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-24T14:13:47Z",
+    "updated_at": "2026-11-26T01:40:21Z"
+  },
+  {
+    "repo": "vankudothuadhinaik/RepoPilot",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 50,
+    "pr_url": "https://github.com/vankudothuadhinaik/RepoPilot/pull/50",
+    "pr_title": "Update mcp requirement from <2.0,>=1.0 to >=2.3.0,<3.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-11-05T12:45:24Z",
+    "updated_at": "2026-11-05T12:46:00Z"
+  },
+  {
+    "repo": "jozrftamson/figma-mcp",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "master",
+    "lockfile": "pyproject.toml",
+    "pr_number": 28,
+    "pr_url": "https://github.com/jozrftamson/figma-mcp/pull/28",
+    "pr_title": "chore(deps):(deps): update mcp requirement from >=2.0.0 to >=2.3.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-10-19T03:08:42Z",
+    "updated_at": "2026-10-19T03:09:07Z"
+  }
+]

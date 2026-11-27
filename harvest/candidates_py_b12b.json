@@ -1,0 +1,376 @@
+[
+  {
+    "repo": "goncaloaguer/unofficial-apple-ads-mcp",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 2,
+    "pr_url": "https://github.com/goncaloaguer/unofficial-apple-ads-mcp/pull/2",
+    "pr_title": "Update mcp requirement from <2,>=1.9 to >=1.9,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-08T14:10:08Z",
+    "updated_at": "2026-09-22T11:27:13Z"
+  },
+  {
+    "repo": "epi13/joern-agent-bridge",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 9,
+    "pr_url": "https://github.com/epi13/joern-agent-bridge/pull/9",
+    "pr_title": "Update mcp requirement from <2,>=1.26 to >=1.26,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-04T19:24:18Z",
+    "updated_at": "2026-09-04T19:24:19Z"
+  },
+  {
+    "repo": "hwang595/hpc-skill-hub",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 57,
+    "pr_url": "https://github.com/hwang595/hpc-skill-hub/pull/57",
+    "pr_title": "Update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-01T16:09:49Z",
+    "updated_at": "2026-09-01T16:09:50Z"
+  },
+  {
+    "repo": "norton77930/corpus-ingest-core",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 9,
+    "pr_url": "https://github.com/norton77930/corpus-ingest-core/pull/9",
+    "pr_title": "chore(deps): update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-12T14:03:58Z",
+    "updated_at": "2026-10-07T20:01:27Z"
+  },
+  {
+    "repo": "JVCSampaio/forgehand",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 5,
+    "pr_url": "https://github.com/JVCSampaio/forgehand/pull/5",
+    "pr_title": "Update mcp requirement from <2,>=1.26 to >=1.26,<3 in the python-runtime group",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-08T08:44:25Z",
+    "updated_at": "2026-11-24T08:43:41Z"
+  },
+  {
+    "repo": "ChinmayGit8765/AlfredOpenSource",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 6,
+    "pr_url": "https://github.com/ChinmayGit8765/AlfredOpenSource/pull/6",
+    "pr_title": "deps: update mcp requirement from >=1.2 to >=2.0.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-25T07:36:19Z",
+    "updated_at": "2026-08-25T07:36:20Z"
+  },
+  {
+    "repo": "toffguy77/winelab-mcp",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 5,
+    "pr_url": "https://github.com/toffguy77/winelab-mcp/pull/5",
+    "pr_title": "\u0417\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u0438 Update mcp requirement from <2,>=1.2.0 to >=1.2.0,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-06T06:58:43Z",
+    "updated_at": "2026-10-19T21:16:31Z"
+  },
+  {
+    "repo": "clayseal/clayseal-receipts",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 31,
+    "pr_url": "https://github.com/clayseal/clayseal-receipts/pull/31",
+    "pr_title": "Update mcp requirement from <2,>=1.0 to >=1.0,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-24T00:12:20Z",
+    "updated_at": "2026-08-24T00:12:21Z"
+  },
+  {
+    "repo": "jacksonnnzzz/leam-opt-mcp",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 2,
+    "pr_url": "https://github.com/jacksonnnzzz/leam-opt-mcp/pull/2",
+    "pr_title": "Update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-09T13:24:14Z",
+    "updated_at": "2026-08-28T23:58:18Z"
+  },
+  {
+    "repo": "JackInSightsV2/Azure-M365-MCP",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 19,
+    "pr_url": "https://github.com/JackInSightsV2/Azure-M365-MCP/pull/19",
+    "pr_title": "chore(deps): update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-02T23:54:48Z",
+    "updated_at": "2026-09-26T12:19:22Z"
+  },
+  {
+    "repo": "emilsmeznieks/RPL",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 2,
+    "pr_url": "https://github.com/emilsmeznieks/RPL/pull/2",
+    "pr_title": "Update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-18T19:42:34Z",
+    "updated_at": "2026-08-23T14:36:16Z"
+  },
+  {
+    "repo": "yara1006/smartroute",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 23,
+    "pr_url": "https://github.com/yara1006/smartroute/pull/23",
+    "pr_title": "chore(deps): update mcp requirement from >=1.0.0 to >=2.1.1",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-08T13:45:13Z",
+    "updated_at": "2026-09-08T13:45:14Z"
+  },
+  {
+    "repo": "MadlabCloud/AI-Image-Studio",
+    "language": "Python",
+    "stars": 10,
+    "license": "Apache-2.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 10,
+    "pr_url": "https://github.com/MadlabCloud/AI-Image-Studio/pull/10",
+    "pr_title": "Update mcp requirement from <2,>=1.14 to >=1.14,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-12T14:16:30Z",
+    "updated_at": "2026-08-12T14:16:31Z"
+  },
+  {
+    "repo": "curzer1995-777/line-local-mcp-user-key",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 1,
+    "pr_url": "https://github.com/curzer1995-777/line-local-mcp-user-key/pull/1",
+    "pr_title": "Update mcp requirement from <2,>=1.13 to >=1.13,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-12T08:35:43Z",
+    "updated_at": "2026-08-12T08:35:43Z"
+  },
+  {
+    "repo": "GeniusBotsLab/neuromedia-research-vault",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 2,
+    "pr_url": "https://github.com/GeniusBotsLab/neuromedia-research-vault/pull/2",
+    "pr_title": "chore(deps-dev): update mcp requirement from <2,>=1.6 to >=1.6,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-16T15:59:08Z",
+    "updated_at": "2026-09-16T15:59:09Z"
+  },
+  {
+    "repo": "MinwooKim1990/unified_cli",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 20,
+    "pr_url": "https://github.com/MinwooKim1990/unified_cli/pull/20",
+    "pr_title": "Update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-04T03:05:54Z",
+    "updated_at": "2026-08-04T03:05:55Z"
+  },
+  {
+    "repo": "ffooll-bit/GATE-MCP",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 44,
+    "pr_url": "https://github.com/ffooll-bit/GATE-MCP/pull/44",
+    "pr_title": "chore(deps): update mcp requirement from <2,>=1.0 to >=1.0,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-09-02T19:07:25Z",
+    "updated_at": "2026-09-02T19:07:26Z"
+  },
+  {
+    "repo": "jzzhuang/MaxRead",
+    "language": "Python",
+    "stars": 10,
+    "license": "GPL-3.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 9,
+    "pr_url": "https://github.com/jzzhuang/MaxRead/pull/9",
+    "pr_title": "Update mcp requirement from <2,>=1.29 to >=2.0.0,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-12T14:21:13Z",
+    "updated_at": "2026-08-12T14:21:14Z"
+  },
+  {
+    "repo": "Towelie/HuntKit",
+    "language": "Python",
+    "stars": 10,
+    "license": "GPL-3.0",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 1,
+    "pr_url": "https://github.com/Towelie/HuntKit/pull/1",
+    "pr_title": "Update mcp requirement from <2,>=1.27 to >=1.27,<3",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-07-30T03:24:13Z",
+    "updated_at": "2026-07-30T03:24:14Z"
+  },
+  {
+    "repo": "Czhari30/enterprise-agentic-integration-fabric",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 7,
+    "pr_url": "https://github.com/Czhari30/enterprise-agentic-integration-fabric/pull/7",
+    "pr_title": "Update mcp requirement from <2.0,>=1.15 to >=1.15,<3.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-30T19:21:44Z",
+    "updated_at": "2026-08-30T19:21:45Z"
+  },
+  {
+    "repo": "Leovilhena/sandbox-mcp",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 21,
+    "pr_url": "https://github.com/Leovilhena/sandbox-mcp/pull/21",
+    "pr_title": "chore(deps): update mcp requirement from >=1.28.1 to >=2.1.1",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-30T23:05:50Z",
+    "updated_at": "2026-08-30T23:05:51Z"
+  },
+  {
+    "repo": "ojbk557/optical-seed-ranker",
+    "language": "Python",
+    "stars": 10,
+    "license": "MIT",
+    "default_branch": "main",
+    "lockfile": "pyproject.toml",
+    "pr_number": 9,
+    "pr_url": "https://github.com/ojbk557/optical-seed-ranker/pull/9",
+    "pr_title": "Update mcp requirement from <2.0,>=1.29 to >=1.29,<3.0",
+    "pr_author": "dependabot[bot]",
+    "changed_files": [
+      "pyproject.toml"
+    ],
+    "created_at": "2026-08-28T01:14:18Z",
+    "updated_at": "2026-08-28T01:14:19Z"
+  }
+]
