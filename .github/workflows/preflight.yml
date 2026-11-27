@@ -105,7 +105,7 @@ jobs:
                 PR_EXIT=$?
                 # If test passed on both main & PR, probe build/typecheck (TS) or ruff/ty/mypy (Py) to reproduce exact failing CI gate!
                 if [[ "${PR_EXIT}" == "0" ]]; then
-                  if [[ "${ECOSYSTEM}" == "ts" ]]; then PROBES="typecheck build"; else PROBES="ruff ty mypy black"; fi
+                  if [[ "${ECOSYSTEM}" == "ts" ]]; then PROBES="typecheck build lint"; else PROBES="ruff ty mypy black"; fi
                   for mode in ${PROBES}; do
                     bash scripts/phase3b_docker_test.sh /tmp/clean-main "${ECOSYSTEM}" /tmp/cache-main "" "/tmp/probe_main_${mode}.log" "${mode}"
                     PM=$?

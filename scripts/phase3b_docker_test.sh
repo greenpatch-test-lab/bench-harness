@@ -40,6 +40,8 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
       RUN_STEP="timeout -k 10s 180s pnpm run build"
     elif [[ "${VERIFY_MODE}" == "typecheck" ]]; then
       RUN_STEP="timeout -k 10s 180s sh -c 'if grep -q \"\\\"typecheck\\\"\" package.json; then pnpm run typecheck; else npx --no-install tsc --noEmit; fi'"
+    elif [[ "${VERIFY_MODE}" == "lint" ]]; then
+      RUN_STEP="timeout -k 10s 180s pnpm run lint"
     else
       RUN_STEP="timeout -k 10s 180s pnpm test"
     fi
@@ -53,6 +55,8 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
       RUN_STEP="timeout -k 10s 180s npm run build"
     elif [[ "${VERIFY_MODE}" == "typecheck" ]]; then
       RUN_STEP="timeout -k 10s 180s sh -c 'if grep -q \"\\\"typecheck\\\"\" package.json; then npm run typecheck; else npx --no-install tsc --noEmit; fi'"
+    elif [[ "${VERIFY_MODE}" == "lint" ]]; then
+      RUN_STEP="timeout -k 10s 180s npm run lint"
     else
       RUN_STEP="timeout -k 10s 180s npm test ${TEST_EXTRA}"
     fi
