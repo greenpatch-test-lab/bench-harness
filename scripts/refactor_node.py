@@ -238,7 +238,7 @@ def main() -> None:
         print(json.dumps(telem))
         raise SystemExit(44)
 
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip("\ufeff \t\r\n")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY must be injected strictly at step scope")
 

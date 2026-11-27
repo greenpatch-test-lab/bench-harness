@@ -113,7 +113,7 @@ def main() -> None:
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
 
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip("\ufeff \t\r\n")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY must be injected strictly at step scope")
 
