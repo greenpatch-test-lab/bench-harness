@@ -140,9 +140,12 @@ def main() -> None:
         if score > 0:
             scored.append((score, rel, ",".join(reasons), raw))
 
-    if not any(r != "manifest" for _, _, r, _ in scored):
+    already_rel = {r for _, r, _, _ in scored}
+    if sum(1 for _, _, rsn, _ in scored if rsn != "manifest") < 5:
         for p in py_files[:25]:
             rel = p.relative_to(repo_dir).as_posix()
+            if rel in already_rel:
+                continue
             raw = p.read_text(encoding="utf-8", errors="replace")
             is_test = "test" in rel.lower()
             scored.append((200 if is_test else 50, rel, "test_fallback" if is_test else "src_fallback", raw))

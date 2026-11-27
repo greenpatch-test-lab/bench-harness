@@ -145,7 +145,8 @@ def call_gemini_refactor(
         "3. NEVER touch .github/, .vscode/, Dockerfile, package.json `scripts`, or unrelated auth/middleware.\n"
         "4. NEVER delete, skip, or weaken test assertions (`expect`, `assert`, `it.skip`, `pytest.mark.skip`).\n"
         "5. NEVER add eval(), exec(), child_process, os.system, shell=True, or outbound network calls.\n"
-        "6. Use exact file paths relative to repo root with `--- a/<path>` and `+++ b/<path>` and accurate @@ hunk headers."
+        "6. Use exact file paths relative to repo root with `--- a/<path>` and `+++ b/<path>` and accurate @@ hunk headers.\n"
+        "7. CRITICAL: Copy context and removed (`-`) lines VERBATIM from the exact file contents shown below. NEVER invent imports or lines that do not exist in the file!"
     )
 
     user_prompt = (

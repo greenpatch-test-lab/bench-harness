@@ -78,7 +78,7 @@ function extractPathsFromLog(logText: string, repoDir: string): Set<string> {
   const re = /([A-Za-z0-9_@./-]+\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs))/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(logText)) !== null) {
-    let rel = m[1].replace(/^\/workspace\//, "").replace(/^\.\//, "");
+    let rel = m[1].replace(/^\/+workspace\//, "").replace(/^workspace\//, "").replace(/^\.\//, "");
     const abs = path.join(repoDir, rel);
     if (fs.existsSync(abs) && fs.statSync(abs).isFile()) {
       found.add(rel.replace(/\\/g, "/"));
@@ -183,10 +183,12 @@ function main() {
     }
   }
 
-  // Fallback if neither log nor package imports matched (e.g., bundler/devDep upgrade like vitest/ts)
-  if (scored.filter((s) => s.reason !== "manifest").length === 0) {
+  // Fallback if few files matched (e.g., bundler/devDep upgrade or indirect import from failing test)
+  const alreadyIncluded = new Set(scored.map((s) => s.rel));
+  if (scored.filter((s) => s.reason !== "manifest").length < 5) {
     for (const abs of allFiles.slice(0, 25)) {
       const rel = path.relative(repoDir, abs).replace(/\\/g, "/");
+      if (alreadyIncluded.has(rel)) continue;
       const raw = fs.readFileSync(abs, "utf8");
       const isConfigOrTest = /(vitest|jest|config|test|spec)/i.test(rel);
       scored.push({
