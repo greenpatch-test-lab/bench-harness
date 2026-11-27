@@ -16,6 +16,8 @@ import os
 import re
 import subprocess
 import tempfile
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -66,20 +68,53 @@ def redact_secrets(text: str) -> tuple[str, int]:
     return text, hits
 
 
+def normalize_hunk_headers(diff_text: str) -> str:
+    """Recalculate exact @@ -old_s,old_c +new_s,new_c @@ line counts so git apply never fails on LLM off-by-one arithmetic."""
+    if not diff_text.strip():
+        return ""
+    lines = diff_text.splitlines()
+    out: list[str] = []
+    i = 0
+    hunk_re = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(.*)$")
+    while i < len(lines):
+        m = hunk_re.match(lines[i])
+        if not m:
+            out.append(lines[i])
+            i += 1
+            continue
+        old_s, new_s, tail = int(m.group(1)), int(m.group(3)), m.group(5)
+        body: list[str] = []
+        i += 1
+        while i < len(lines) and not lines[i].startswith(("diff --git ", "--- ", "+++ ", "@@ ")):
+            ln = lines[i]
+            if ln.startswith(("+", "-", " ", "\\")):
+                body.append(ln)
+            elif ln == "":
+                body.append(" ")
+            else:
+                break
+            i += 1
+        old_c = sum(1 for b in body if b.startswith((" ", "-")))
+        new_c = sum(1 for b in body if b.startswith((" ", "+")))
+        out.append(f"@@ -{old_s},{old_c} +{new_s},{new_c} @@{tail}")
+        out.extend(body)
+    return "\n".join(out).rstrip("\n") + "\n"
+
+
 def extract_unified_diff(raw_text: str) -> str:
     # Prefer fenced ```diff ... ``` block
     m = re.search(r"```(?:diff|patch)?\s*\n(diff --git[\s\S]*?)```", raw_text)
     if m:
-        return m.group(1).strip() + "\n"
+        return normalize_hunk_headers(m.group(1).strip())
     m2 = re.search(r"```(?:diff|patch)?\s*\n(--- a/[\s\S]*?)```", raw_text)
     if m2:
-        return m2.group(1).strip() + "\n"
+        return normalize_hunk_headers(m2.group(1).strip())
     idx = raw_text.find("diff --git ")
     if idx != -1:
-        return raw_text[idx:].strip() + "\n"
+        return normalize_hunk_headers(raw_text[idx:].strip())
     idx2 = raw_text.find("--- a/")
     if idx2 != -1:
-        return raw_text[idx2:].strip() + "\n"
+        return normalize_hunk_headers(raw_text[idx2:].strip())
     return ""
 
 
@@ -134,17 +169,28 @@ def call_gemini_refactor(
         },
     }
 
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "x-goog-api-key": api_key,
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=180) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
+    data = None
+    for attempt, wait_s in enumerate((0, 8, 20, 40, 60)):
+        if wait_s:
+            time.sleep(wait_s)
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=180) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                break
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 504) and attempt < 4:
+                continue
+            raise
+    assert data is not None
 
     usage = data.get("usageMetadata") or {}
     in_tok = int(usage.get("promptTokenCount", 0))
@@ -153,7 +199,7 @@ def call_gemini_refactor(
 
     cand = (data.get("candidates") or [{}])[0]
     parts = ((cand.get("content") or {}).get("parts") or [])
-    raw_text = "".join(p.get("text", "") for p in parts if isinstance(p, dict))
+    raw_text = "".join(p.get("text", "") for p in parts if isinstance(p, dict) and not p.get("thought"))
     diff_text = extract_unified_diff(raw_text)
 
     return {

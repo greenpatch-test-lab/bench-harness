@@ -278,8 +278,9 @@ jobs:
           fi
 
           SAFE_NAME=$(echo "${UPSTREAM_REPO}" | tr '/' '_')
+          export GREEN_LOOP FORK_PR_URL FORK_COMMIT_URL SAFE_NAME
           mkdir -p /tmp/gp-out
-          python3 - <<PY
+          python3 - <<'PY'
           import json, os
 
           def load_opt(p):
@@ -305,7 +306,7 @@ jobs:
               out_tok += int((aud.get("telemetry") or {}).get("output_and_thinking_tokens", 0))
               usd += float((aud.get("telemetry") or {}).get("usd_cost", 0.0))
 
-          green_loop = int("${GREEN_LOOP}")
+          green_loop = int(os.environ.get("GREEN_LOOP", "0") or "0")
           aud_approved = bool(aud and (aud.get("verdict") or {}).get("approved"))
           verified_green = (green_loop > 0 and aud_approved)
           patch_lines = len(open("/tmp/candidate.patch").read().splitlines()) if os.path.exists("/tmp/candidate.patch") else 0
@@ -324,15 +325,16 @@ jobs:
               final_status = "suppressed_failed_tests_3_loops"
 
           rec = {
-            "upstream_repo": "${UPSTREAM_REPO}",
-            "fork_repo": "greenpatch-test-lab/${FORK_NAME}",
-            "ecosystem": "${ECOSYSTEM}",
-            "pr_number": int("${PR_NUMBER}"),
-            "upstream_pr_url": "${PR_URL}",
-            "pr_title": "${PR_TITLE}",
-            "upgraded_package": "${UPGRADED_PKG}",
-            "old_version": "${OLD_VER}",
-            "new_version": "${NEW_VER}",
+            "upstream_repo": os.environ["UPSTREAM_REPO"],
+            "fork_repo": f"greenpatch-test-lab/{os.environ['FORK_NAME']}",
+            "ecosystem": os.environ["ECOSYSTEM"],
+            "pr_number": int(os.environ["PR_NUMBER"]),
+            "upstream_pr_url": os.environ["PR_URL"],
+            "pr_title": os.environ["PR_TITLE"],
+            "upgraded_package": os.environ["UPGRADED_PKG"],
+            "old_version": os.environ["OLD_VER"],
+            "new_version": os.environ["NEW_VER"],
+            "verify_mode": os.environ.get("VERIFY_MODE", "test"),
             "verified_green": verified_green,
             "final_status": final_status,
             "loops_used": green_loop if green_loop > 0 else len(refs),
@@ -355,10 +357,11 @@ jobs:
             "diff_lines": patch_lines,
             "secret_leaks": 0,
             "planted_mutations": 0,
-            "fork_pr_url": "${FORK_PR_URL}",
-            "fork_commit_url": "${FORK_COMMIT_URL}",
+            "fork_pr_url": os.environ.get("FORK_PR_URL", ""),
+            "fork_commit_url": os.environ.get("FORK_COMMIT_URL", ""),
           }
-          open("/tmp/gp-out/${SAFE_NAME}.json", "w").write(json.dumps(rec, indent=2))
+          out_path = f"/tmp/gp-out/{os.environ['SAFE_NAME']}.json"
+          open(out_path, "w").write(json.dumps(rec, indent=2))
           print(json.dumps(rec, indent=2))
           PY
 

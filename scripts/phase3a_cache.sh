@@ -65,6 +65,23 @@ EOF
   if command -v osv-scanner >/dev/null 2>&1; then
     echo "[Phase 3a] Running osv-scanner on staged lockfile..."
     osv-scanner scan --lockfile="${CACHE_STAGE}/$([[ -f ${CACHE_STAGE}/pnpm-lock.yaml ]] && echo pnpm-lock.yaml || echo package-lock.json)" --format=json > /tmp/phase3a_osv.json 2>/dev/null || true
+    python3 - /tmp/phase3a_osv.json <<'PY' || exit 41
+import json, os, sys
+p = sys.argv[1]
+if os.path.isfile(p) and os.path.getsize(p) > 0:
+    try:
+        data = json.load(open(p))
+        for res in data.get("results") or []:
+            for pkg in res.get("packages") or []:
+                for v in pkg.get("vulnerabilities") or []:
+                    if str(v.get("id", "")).startswith("MAL-"):
+                        print(f"[Phase 3a] OSV MALWARE ABORT: {v.get('id')}", file=sys.stderr)
+                        sys.exit(41)
+    except SystemExit:
+        raise
+    except Exception:
+        pass
+PY
   fi
 
   if command -v guarddog >/dev/null 2>&1 && [[ -f "${CACHE_STAGE}/package-lock.json" ]]; then

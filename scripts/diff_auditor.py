@@ -13,6 +13,8 @@ import argparse
 import json
 import os
 import re
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -44,17 +46,28 @@ def audit_patch(api_key: str, patch_text: str, pr_title: str, packages: str) -> 
             "maxOutputTokens": 1024,
         },
     }
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "x-goog-api-key": api_key,
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=90) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
+    data = None
+    for attempt, wait_s in enumerate((0, 8, 20, 40, 60)):
+        if wait_s:
+            time.sleep(wait_s)
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(body).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=90) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                break
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 504) and attempt < 4:
+                continue
+            raise
+    assert data is not None
 
     usage = data.get("usageMetadata") or {}
     in_tok = int(usage.get("promptTokenCount", 0))
@@ -63,7 +76,7 @@ def audit_patch(api_key: str, patch_text: str, pr_title: str, packages: str) -> 
 
     cand = (data.get("candidates") or [{}])[0]
     parts = ((cand.get("content") or {}).get("parts") or [])
-    raw_text = "".join(p.get("text", "") for p in parts if isinstance(p, dict))
+    raw_text = "".join(p.get("text", "") for p in parts if isinstance(p, dict) and not p.get("thought"))
 
     verdict = {"approved": False, "risk_level": "high", "findings": ["Auditor output unparseable"], "summary": ""}
     m = re.search(r"\{.*\}", raw_text, re.DOTALL)

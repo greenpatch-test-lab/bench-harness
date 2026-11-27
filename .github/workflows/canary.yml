@@ -20,8 +20,11 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           $HOME/.local/bin/uv tool install --python 3.12 semgrep
           $HOME/.local/bin/uv tool install --python 3.12 detect-secrets
+          $HOME/.local/bin/uv tool install --python 3.12 guarddog
           curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar -xz -C /tmp gitleaks
           sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          curl -sSL https://github.com/google/osv-scanner/releases/download/v2.0.0/osv-scanner_linux_amd64 -o /tmp/osv-scanner
+          chmod +x /tmp/osv-scanner && sudo mv /tmp/osv-scanner /usr/local/bin/osv-scanner
 
       - name: Unit-Test First-Party Custom Semgrep CE Rules (--metrics=off) & AST Scope Jail
         run: |
