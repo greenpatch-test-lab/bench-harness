@@ -92,6 +92,7 @@ def main() -> None:
                 "new_version": m["new_version"],
                 "preflight_main_exit": rec["main_exit_code"],
                 "preflight_pr_exit": rec["pr_exit_code"],
+                "verify_mode": rec.get("verify_mode", "test"),
             }
             if eco == "ts":
                 eligible_ts.append(entry)

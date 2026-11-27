@@ -62,6 +62,7 @@ jobs:
       UPGRADED_PKG: ${{ matrix.upgraded_package }}
       OLD_VER: ${{ matrix.old_version }}
       NEW_VER: ${{ matrix.new_version }}
+      VERIFY_MODE: ${{ matrix.verify_mode || 'test' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -95,7 +96,7 @@ jobs:
 
           # Phase 3b: Capture failing test log inside throwaway air-gapped Docker container
           set +e
-          bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache "" /tmp/gp-work/loop0.log
+          bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache "" /tmp/gp-work/loop0.log "${VERIFY_MODE}"
           INIT_EXIT=$?
           set -e
           echo "init_exit=${INIT_EXIT}" >> "$GITHUB_OUTPUT"
@@ -154,7 +155,7 @@ jobs:
             cp /tmp/gp-work/loop0.log /tmp/gp-work/loop1.log
             echo "98" > /tmp/gp-work/exit1.txt
           else
-            bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache /tmp/candidate.patch /tmp/gp-work/loop1.log
+            bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache /tmp/candidate.patch /tmp/gp-work/loop1.log "${VERIFY_MODE}"
             EC=$?
             echo "${EC}" > /tmp/gp-work/exit1.txt
             if [[ $EC -eq 0 ]]; then echo "1" > /tmp/gp-work/green_loop.txt; else echo "Loop 1 tests exited ${EC}" > /tmp/gp-work/prior_rej.txt; fi
@@ -189,7 +190,7 @@ jobs:
             cp /tmp/gp-work/loop1.log /tmp/gp-work/loop2.log
             echo "98" > /tmp/gp-work/exit2.txt
           else
-            bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache /tmp/candidate.patch /tmp/gp-work/loop2.log
+            bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache /tmp/candidate.patch /tmp/gp-work/loop2.log "${VERIFY_MODE}"
             EC=$?
             echo "${EC}" > /tmp/gp-work/exit2.txt
             if [[ $EC -eq 0 ]]; then echo "2" > /tmp/gp-work/green_loop.txt; else echo "Loop 2 tests exited ${EC}" > /tmp/gp-work/prior_rej.txt; fi
@@ -223,7 +224,7 @@ jobs:
           if [[ $JAIL_RC -ne 0 ]]; then
             echo "98" > /tmp/gp-work/exit3.txt
           else
-            bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache /tmp/candidate.patch /tmp/gp-work/loop3.log
+            bash scripts/phase3b_docker_test.sh /tmp/clean-repo "${ECOSYSTEM}" /tmp/pkg-cache /tmp/candidate.patch /tmp/gp-work/loop3.log "${VERIFY_MODE}"
             EC=$?
             echo "${EC}" > /tmp/gp-work/exit3.txt
             if [[ $EC -eq 0 ]]; then echo "3" > /tmp/gp-work/green_loop.txt; fi

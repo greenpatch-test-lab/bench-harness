@@ -11,6 +11,7 @@ ECOSYSTEM="${2:?ecosystem (ts|py) required}"
 PKG_CACHE="${3:-/tmp/pkg-cache}"
 PATCH_FILE="${4:-}"
 OUT_LOG="${5:-/tmp/scrubbed-test.log}"
+VERIFY_MODE="${6:-test}" # test | build | typecheck | ruff | mypy | ty
 
 EPHEMERAL_DIR="/tmp/ephemeral-run"
 RAW_LOG="/tmp/raw-test.log"
@@ -35,14 +36,27 @@ fi
 
 if [[ "${ECOSYSTEM}" == "ts" ]]; then
   if [[ -f "${EPHEMERAL_DIR}/pnpm-lock.yaml" ]]; then
-    INNER_CMD='mkdir -p /tmp/bin; PNPM_BIN=""; for p in /pkg-cache/pnpm-cli/bin/pnpm.cjs /pkg-cache/pnpm-cli/dist/pnpm.cjs; do [ -f "$p" ] && PNPM_BIN="$p" && break; done; if [ -n "$PNPM_BIN" ]; then printf "#!/bin/sh\nexec node \"%s\" \"\$@\"\n" "$PNPM_BIN" > /tmp/bin/pnpm && chmod +x /tmp/bin/pnpm; fi; export PATH="/tmp/bin:$PATH"; if [ ! -d /workspace/node_modules ] && [ -n "$PNPM_BIN" ]; then pnpm install --offline --ignore-scripts --store-dir /pkg-cache/pnpm-store; fi && if [ -n "$PNPM_BIN" ]; then timeout -k 10s 180s pnpm test; else timeout -k 10s 180s npm test; fi'
+    if [[ "${VERIFY_MODE}" == "build" ]]; then
+      RUN_STEP="timeout -k 10s 180s pnpm run build"
+    elif [[ "${VERIFY_MODE}" == "typecheck" ]]; then
+      RUN_STEP="timeout -k 10s 180s sh -c 'if grep -q \"\\\"typecheck\\\"\" package.json; then pnpm run typecheck; else npx --no-install tsc --noEmit; fi'"
+    else
+      RUN_STEP="timeout -k 10s 180s pnpm test"
+    fi
+    INNER_CMD="if [ ! -d /workspace/node_modules ]; then pnpm install --offline --ignore-scripts --store-dir /pkg-cache/pnpm-store; fi && ${RUN_STEP}"
   else
-    # Only pass --watchAll=false to Jest / react-scripts (vitest/mocha/node --test fail on unknown --watchAll; CI=true disables watch)
     TEST_EXTRA=""
     if grep -qE '"test"\s*:\s*"[^"]*(jest|react-scripts)' "${EPHEMERAL_DIR}/package.json" 2>/dev/null; then
       TEST_EXTRA="-- --watchAll=false"
     fi
-    INNER_CMD="if [ ! -d /workspace/node_modules ]; then npm ci --offline --ignore-scripts --no-audit --cache /pkg-cache/npm-cache; fi && timeout -k 10s 180s npm test ${TEST_EXTRA}"
+    if [[ "${VERIFY_MODE}" == "build" ]]; then
+      RUN_STEP="timeout -k 10s 180s npm run build"
+    elif [[ "${VERIFY_MODE}" == "typecheck" ]]; then
+      RUN_STEP="timeout -k 10s 180s sh -c 'if grep -q \"\\\"typecheck\\\"\" package.json; then npm run typecheck; else npx --no-install tsc --noEmit; fi'"
+    else
+      RUN_STEP="timeout -k 10s 180s npm test ${TEST_EXTRA}"
+    fi
+    INNER_CMD="if [ ! -d /workspace/node_modules ]; then npm ci --offline --ignore-scripts --no-audit --cache /pkg-cache/npm-cache; fi && ${RUN_STEP}"
   fi
 
   docker run --rm \
@@ -58,7 +72,7 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
     -v "${PKG_CACHE}:/pkg-cache:ro" \
     node:22-bookworm-slim \
     /usr/bin/env -i \
-      PATH="/workspace/node_modules/.bin:/usr/local/bin:/usr/bin:/bin" \
+      PATH="/workspace/node_modules/.bin:/pkg-cache/bin:/usr/local/bin:/usr/bin:/bin" \
       HOME="/tmp" \
       CI="true" \
       npm_config_cache="/pkg-cache/npm-cache" \
@@ -72,8 +86,17 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
   EXIT_CODE=$?
 
 elif [[ "${ECOSYSTEM}" == "py" ]]; then
-  # Synthesize .dist-info/METADATA in /tmp/py-meta from pyproject.toml so importlib.metadata.version() works offline with zero code execution!
-  PY_INNER='python3 -c "import os, re, tomllib
+  if [[ "${VERIFY_MODE}" == "ruff" ]]; then
+    PY_CHECK="timeout -k 10s 120s ruff check ."
+  elif [[ "${VERIFY_MODE}" == "mypy" ]]; then
+    PY_CHECK="timeout -k 10s 180s mypy ."
+  elif [[ "${VERIFY_MODE}" == "ty" ]]; then
+    PY_CHECK="timeout -k 10s 120s ty check"
+  else
+    PY_CHECK="timeout -k 10s 180s python3 -m pytest -q --maxfail=10 --ignore=tests/e2e --ignore=test/e2e --ignore=test/functional --ignore=tests/integration"
+  fi
+
+  PY_INNER="python3 -c 'import os, re, tomllib
 os.makedirs(\"/tmp/py-meta\", exist_ok=True)
 if os.path.isfile(\"/workspace/pyproject.toml\"):
     d = tomllib.loads(open(\"/workspace/pyproject.toml\", \"rb\").read().decode(\"utf-8\", \"replace\"))
@@ -85,8 +108,8 @@ if os.path.isfile(\"/workspace/pyproject.toml\"):
         di = f\"/tmp/py-meta/{norm}-{ver}.dist-info\"
         os.makedirs(di, exist_ok=True)
         open(f\"{di}/METADATA\", \"w\").write(f\"Metadata-Version: 2.1\\nName: {name}\\nVersion: {ver}\\n\")
-" 2>/dev/null || true
-timeout -k 10s 180s python3 -m pytest -q --maxfail=10'
+' 2>/dev/null || true
+${PY_CHECK}"
 
   docker run --rm \
     --network none \

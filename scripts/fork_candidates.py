@@ -158,7 +158,8 @@ def main() -> None:
     eco = sys.argv[1]
     limit = int(sys.argv[2]) if len(sys.argv) > 2 else 42
     hdir = Path(r"e:\market research\bench-harness\harvest")
-    src = hdir / f"candidates_{eco}_filtered.json"
+    src = Path(sys.argv[3]) if len(sys.argv) > 3 else (hdir / f"candidates_{eco}_filtered.json")
+    out_file = Path(sys.argv[4]) if len(sys.argv) > 4 else (hdir / f"preflight_batch_{eco}.json")
     cands = json.loads(src.read_text(encoding="utf-8"))[:limit]
 
     mirrored: list[dict] = []
@@ -171,7 +172,6 @@ def main() -> None:
                 with LOCK:
                     print(f"[forked+mirrored] {len(mirrored):02d}/{len(cands)} {res['fork_repo']} ({res['fork_pr_branch']})", flush=True)
 
-    out_file = hdir / f"preflight_batch_{eco}.json"
     out_file.write_text(json.dumps(mirrored, indent=2), encoding="utf-8")
     print(f"FORK_MIRROR_DONE: eco={eco}, count={len(mirrored)}, saved={out_file}", flush=True)
 

@@ -30,14 +30,20 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
   if [[ -f "${CACHE_STAGE}/pnpm-lock.yaml" ]]; then
     echo "[Phase 3a] pnpm fetch + offline-ready store with 72h cooldown (minimum-release-age=4320) & --ignore-scripts"
     export npm_config_manage_package_manager_versions="false"
-    mkdir -p "${PKG_CACHE}/pnpm-store" "${PKG_CACHE}/pnpm-cli"
-    # Stage standalone pnpm CLI into /pkg-cache so --read-only --network none container never needs corepack enable!
+    mkdir -p "${PKG_CACHE}/pnpm-store" "${PKG_CACHE}/pnpm-cli" "${PKG_CACHE}/bin"
+    # Stage standalone pnpm CLI + executable wrapper into /pkg-cache/bin so --read-only --network none container has pnpm on PATH!
     PNPM_ROOT="$(npm root -g)/pnpm"
     if [[ -d "${PNPM_ROOT}" ]]; then
       cp -a "${PNPM_ROOT}/." "${PKG_CACHE}/pnpm-cli/"
+      PNPM_ENTRY="/pkg-cache/pnpm-cli/bin/pnpm.cjs"
+      [[ -f "${PKG_CACHE}/pnpm-cli/dist/pnpm.cjs" && ! -f "${PKG_CACHE}/pnpm-cli/bin/pnpm.cjs" ]] && PNPM_ENTRY="/pkg-cache/pnpm-cli/dist/pnpm.cjs"
+      cat > "${PKG_CACHE}/bin/pnpm" <<EOF
+#!/bin/sh
+exec node "${PNPM_ENTRY}" "\$@"
+EOF
+      chmod 755 "${PKG_CACHE}/bin/pnpm"
     fi
     (cd "${CACHE_STAGE}" && pnpm fetch --ignore-scripts --config.minimum-release-age=4320 --store-dir "${PKG_CACHE}/pnpm-store")
-    # Pre-materialize --ignore-scripts node_modules from manifests ONLY (zero target source mounted)
     (cd "${CACHE_STAGE}" && pnpm install --offline --frozen-lockfile --ignore-scripts --store-dir "${PKG_CACHE}/pnpm-store" || pnpm install --offline --ignore-scripts --store-dir "${PKG_CACHE}/pnpm-store" || true)
     if [[ -d "${CACHE_STAGE}/node_modules" ]]; then
       cp -a "${CACHE_STAGE}/node_modules" "${PKG_CACHE}/preinstalled_node_modules"
@@ -83,15 +89,20 @@ PY
   fi
 
 elif [[ "${ECOSYSTEM}" == "py" ]]; then
-  for f in pyproject.toml uv.lock poetry.lock requirements.txt; do
+  for f in pyproject.toml uv.lock poetry.lock requirements.txt requirements-dev.txt requirements-test.txt; do
     if [[ -f "${REPO_DIR}/${f}" ]]; then
       cp "${REPO_DIR}/${f}" "${CACHE_STAGE}/${f}"
     fi
   done
 
   if [[ -f "${CACHE_STAGE}/uv.lock" ]]; then
-    echo "[Phase 3a] uv sync with 72h cooldown (--exclude-newer '3 days') & --no-install-project"
-    (cd "${CACHE_STAGE}" && uv sync --python 3.12 --exclude-newer "3 days" --no-install-project --cache-dir "${PKG_CACHE}/uv-cache" || uv sync --python 3.12 --no-install-project --cache-dir "${PKG_CACHE}/uv-cache")
+    echo "[Phase 3a] uv sync --all-groups --all-extras with 72h cooldown (--exclude-newer '3 days') & --no-install-project"
+    (cd "${CACHE_STAGE}" && ( \
+      uv sync --python 3.12 --all-groups --all-extras --exclude-newer "3 days" --no-install-project --cache-dir "${PKG_CACHE}/uv-cache" \
+      || uv sync --python 3.12 --all-groups --exclude-newer "3 days" --no-install-project --cache-dir "${PKG_CACHE}/uv-cache" \
+      || uv sync --python 3.12 --all-groups --no-install-project --cache-dir "${PKG_CACHE}/uv-cache" \
+      || uv sync --python 3.12 --no-install-project --cache-dir "${PKG_CACHE}/uv-cache" \
+    ))
     if [[ -d "${CACHE_STAGE}/.venv" ]]; then
       cp -a "${CACHE_STAGE}/.venv" "${PKG_CACHE}/venv"
     fi
