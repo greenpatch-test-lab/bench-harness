@@ -144,8 +144,9 @@ PY
   fi
 
   # Mandatory Python .pth startup-hook scan (Hades campaign protection)
+  # Allowlist well-known benign stdlib/tooling hooks (coverage.py, PEP-420 *-nspkg.pth, editable/virtualenv/setuptools)
   echo "[Phase 3a] Scanning unpacked wheels & venv for malicious .pth startup hooks..."
-  PTH_HITS=$(find "${CACHE_STAGE}" "${PKG_CACHE}" -name "*.pth" -type f -exec grep -rnE "^import |^exec\(|__import__" {} + 2>/dev/null | grep -vE "(_editable|_virtualenv|distutils-precedence|pkg_resources|pytest|__editable__|sitecustomize)" || true)
+  PTH_HITS=$(find "${CACHE_STAGE}" "${PKG_CACHE}" -name "*.pth" -type f -exec grep -rnE "^import |^exec\(|__import__" {} + 2>/dev/null | grep -vE "(_editable|_virtualenv|distutils-precedence|pkg_resources|pytest|__editable__|sitecustomize|a1_coverage\.pth|-nspkg\.pth|_matplotlib|zope\.|google_)" || true)
   if [[ -n "${PTH_HITS}" ]]; then
     echo "[Phase 3a] ABORT: Unexpected executable .pth startup hook detected:" >&2
     echo "${PTH_HITS}" >&2

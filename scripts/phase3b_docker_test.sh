@@ -35,9 +35,14 @@ fi
 
 if [[ "${ECOSYSTEM}" == "ts" ]]; then
   if [[ -f "${EPHEMERAL_DIR}/pnpm-lock.yaml" ]]; then
-    INNER_CMD="if [ ! -d /workspace/node_modules ]; then node /pkg-cache/pnpm-cli/bin/pnpm.cjs install --offline --ignore-scripts --store-dir /pkg-cache/pnpm-store; fi && timeout -k 10s 180s node /pkg-cache/pnpm-cli/bin/pnpm.cjs test"
+    INNER_CMD='PNPM_BIN=""; for p in /pkg-cache/pnpm-cli/bin/pnpm.cjs /pkg-cache/pnpm-cli/dist/pnpm.cjs; do [ -f "$p" ] && PNPM_BIN="$p" && break; done; if [ ! -d /workspace/node_modules ] && [ -n "$PNPM_BIN" ]; then node "$PNPM_BIN" install --offline --ignore-scripts --store-dir /pkg-cache/pnpm-store; fi && if [ -n "$PNPM_BIN" ]; then timeout -k 10s 180s node "$PNPM_BIN" test; else timeout -k 10s 180s npm test; fi'
   else
-    INNER_CMD="if [ ! -d /workspace/node_modules ]; then npm ci --offline --ignore-scripts --no-audit --cache /pkg-cache/npm-cache; fi && timeout -k 10s 180s npm test -- --watchAll=false"
+    # Only pass --watchAll=false to Jest / react-scripts (vitest/mocha/node --test fail on unknown --watchAll; CI=true disables watch)
+    TEST_EXTRA=""
+    if grep -qE '"test"\s*:\s*"[^"]*(jest|react-scripts)' "${EPHEMERAL_DIR}/package.json" 2>/dev/null; then
+      TEST_EXTRA="-- --watchAll=false"
+    fi
+    INNER_CMD="if [ ! -d /workspace/node_modules ]; then npm ci --offline --ignore-scripts --no-audit --cache /pkg-cache/npm-cache; fi && timeout -k 10s 180s npm test ${TEST_EXTRA}"
   fi
 
   docker run --rm \
