@@ -28,11 +28,16 @@ if [[ -n "${PATCH_FILE}" && -f "${PATCH_FILE}" && -s "${PATCH_FILE}" ]]; then
   git -C "${EPHEMERAL_DIR}" apply "${PATCH_FILE}"
 fi
 
+# For TS repos, hydrate pre-fetched --ignore-scripts node_modules into the throwaway copy if present
+if [[ "${ECOSYSTEM}" == "ts" && -d "${PKG_CACHE}/preinstalled_node_modules" ]]; then
+  cp -a "${PKG_CACHE}/preinstalled_node_modules" "${EPHEMERAL_DIR}/node_modules"
+fi
+
 if [[ "${ECOSYSTEM}" == "ts" ]]; then
   if [[ -f "${EPHEMERAL_DIR}/pnpm-lock.yaml" ]]; then
-    INNER_CMD="corepack enable && pnpm install --offline --ignore-scripts --store-dir /pkg-cache && timeout -k 10s 180s pnpm test -- --watchAll=false || timeout -k 10s 180s pnpm test"
+    INNER_CMD="if [ ! -d /workspace/node_modules ]; then node /pkg-cache/pnpm-cli/bin/pnpm.cjs install --offline --ignore-scripts --store-dir /pkg-cache/pnpm-store; fi && timeout -k 10s 180s node /pkg-cache/pnpm-cli/bin/pnpm.cjs test"
   else
-    INNER_CMD="npm ci --offline --ignore-scripts --no-audit && timeout -k 10s 180s npm test -- --watchAll=false"
+    INNER_CMD="if [ ! -d /workspace/node_modules ]; then npm ci --offline --ignore-scripts --no-audit --cache /pkg-cache/npm-cache; fi && timeout -k 10s 180s npm test -- --watchAll=false"
   fi
 
   docker run --rm \
@@ -51,7 +56,7 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
       PATH="/workspace/node_modules/.bin:/usr/local/bin:/usr/bin:/bin" \
       HOME="/tmp" \
       CI="true" \
-      npm_config_cache="/pkg-cache" \
+      npm_config_cache="/pkg-cache/npm-cache" \
       npm_config_logs_dir="/tmp/npm-logs" \
       npm_config_update_notifier="false" \
       npm_config_offline="true" \
@@ -61,6 +66,7 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
   EXIT_CODE=$?
 
 elif [[ "${ECOSYSTEM}" == "py" ]]; then
+  # Resolve python site-packages inside /pkg-cache/venv dynamically so python:3.12-slim finds all deps offline
   docker run --rm \
     --network none \
     -w /workspace \
@@ -78,9 +84,9 @@ elif [[ "${ECOSYSTEM}" == "py" ]]; then
       HOME="/tmp" \
       CI="true" \
       PYTHONDONTWRITEBYTECODE="1" \
-      PYTHONPATH="/workspace:/workspace/src" \
+      PYTHONPATH="/workspace:/workspace/src:/pkg-cache/venv/lib/python3.12/site-packages" \
       UV_OFFLINE="1" \
-    sh -c "timeout -k 10s 180s pytest -q --maxfail=10" \
+    sh -c "timeout -k 10s 180s python3 -m pytest -q --maxfail=10" \
     > "${RAW_LOG}" 2>&1
   EXIT_CODE=$?
 else
@@ -97,9 +103,9 @@ import re, subprocess, sys
 raw_path, out_path = sys.argv[1], sys.argv[2]
 text = open(raw_path, "r", encoding="utf-8", errors="replace").read()
 
-# Redact high-risk secret patterns before handing logs to LLM
 patterns = [
     r"AIza[0-9A-Za-z_\-]{25,}",
+    r"AQ\.[0-9A-Za-z_\-]{25,}",
     r"github_pat_[0-9A-Za-z_]{30,}",
     r"gh[pousr]_[0-9A-Za-z]{25,}",
     r"sk-[0-9A-Za-z_\-]{20,}",
@@ -108,7 +114,6 @@ patterns = [
 for pat in patterns:
     text = re.sub(pat, "[REDACTED_SECRET]", text)
 
-# Run gitleaks if installed to double-verify zero leaks
 try:
     r = subprocess.run(
         ["gitleaks", "detect", "--no-git", "--source", raw_path, "--redact", "--exit-code", "99"],
@@ -119,7 +124,6 @@ try:
 except Exception:
     pass
 
-# Keep tail + head <= 16,000 chars (~4,000 tokens)
 if len(text) > 16000:
     text = text[:4000] + "\n... [LOG TRUNCATED TO <=4,000 TOKENS] ...\n" + text[-11500:]
 

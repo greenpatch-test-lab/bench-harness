@@ -54,11 +54,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node 22, pnpm & uv
+      - name: Setup Node 22, pnpm, uv & Pre-Pull Sandbox Image
         run: |
           npm install -g pnpm@10
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          if [[ "${{ matrix.ecosystem }}" == "ts" ]]; then docker pull -q node:22-bookworm-slim; else docker pull -q python:3.12-slim; fi
 
       - name: Pre-Flight Baseline main (exit 0 offline) & PR branch (exit != 0 offline)
         env:

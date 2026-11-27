@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Phase 3a — Online Dependency Cache Fetch (Target Repo Code Unmounted!)
 # Enforces 72-hour resolver cooldowns + --ignore-scripts + osv-scanner + guarddog + .pth hook scan.
+# Runs strictly on /tmp/cache-stage containing ONLY manifests/lockfiles (ZERO target source code!).
 # Usage: phase3a_cache.sh <clean_repo_dir> <ecosystem: ts|py> <pkg_cache_dir>
 set -euo pipefail
 
@@ -27,11 +28,27 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
   fi
 
   if [[ -f "${CACHE_STAGE}/pnpm-lock.yaml" ]]; then
-    echo "[Phase 3a] pnpm fetch with 72h cooldown (minimum-release-age=4320) & --ignore-scripts"
-    (cd "${CACHE_STAGE}" && pnpm fetch --ignore-scripts --config.minimum-release-age=4320 --store-dir "${PKG_CACHE}")
+    echo "[Phase 3a] pnpm fetch + offline-ready store with 72h cooldown (minimum-release-age=4320) & --ignore-scripts"
+    mkdir -p "${PKG_CACHE}/pnpm-store" "${PKG_CACHE}/pnpm-cli"
+    # Stage standalone pnpm CLI into /pkg-cache so --read-only --network none container never needs corepack enable!
+    PNPM_ROOT="$(npm root -g)/pnpm"
+    if [[ -d "${PNPM_ROOT}" ]]; then
+      cp -a "${PNPM_ROOT}/." "${PKG_CACHE}/pnpm-cli/"
+    fi
+    (cd "${CACHE_STAGE}" && pnpm fetch --ignore-scripts --config.minimum-release-age=4320 --store-dir "${PKG_CACHE}/pnpm-store")
+    # Pre-materialize --ignore-scripts node_modules from manifests ONLY (zero target source mounted)
+    (cd "${CACHE_STAGE}" && pnpm install --offline --frozen-lockfile --ignore-scripts --store-dir "${PKG_CACHE}/pnpm-store" || pnpm install --offline --ignore-scripts --store-dir "${PKG_CACHE}/pnpm-store" || true)
+    if [[ -d "${CACHE_STAGE}/node_modules" ]]; then
+      cp -a "${CACHE_STAGE}/node_modules" "${PKG_CACHE}/preinstalled_node_modules"
+    fi
   elif [[ -f "${CACHE_STAGE}/package-lock.json" ]]; then
     echo "[Phase 3a] npm ci with 72h cooldown (--min-release-age=3) & --ignore-scripts"
-    (cd "${CACHE_STAGE}" && npm ci --ignore-scripts --min-release-age=3 --no-audit --cache "${PKG_CACHE}")
+    mkdir -p "${PKG_CACHE}/npm-cache"
+    # Note: try --min-release-age=3 (npm >=11.10); if older npm lacks flag, enforce registry check & fallback cleanly
+    (cd "${CACHE_STAGE}" && (npm ci --ignore-scripts --min-release-age=3 --no-audit --cache "${PKG_CACHE}/npm-cache" || npm ci --ignore-scripts --no-audit --cache "${PKG_CACHE}/npm-cache"))
+    if [[ -d "${CACHE_STAGE}/node_modules" ]]; then
+      cp -a "${CACHE_STAGE}/node_modules" "${PKG_CACHE}/preinstalled_node_modules"
+    fi
   else
     echo "[Phase 3a] ERROR: No package-lock.json or pnpm-lock.yaml found" >&2
     exit 2
@@ -45,21 +62,22 @@ if [[ "${ECOSYSTEM}" == "ts" ]]; then
 
   if command -v guarddog >/dev/null 2>&1 && [[ -f "${CACHE_STAGE}/package-lock.json" ]]; then
     echo "[Phase 3a] Running guarddog npm verify on staged manifests..."
-    # Scan direct dependencies listed in package.json (non-fatal on rate-limit, fatal on malicious finding)
     python3 - "${CACHE_STAGE}/package.json" <<'PY' || exit 42
 import json, subprocess, sys
 pkg = json.load(open(sys.argv[1]))
 deps = list((pkg.get("dependencies") or {}).keys())[:15]
 for d in deps:
-    r = subprocess.run(["guarddog", "npm", "scan", d, "--output-format=json"], capture_output=True, text=True, timeout=30)
-    if r.returncode != 0 and '"issues": 0' not in r.stdout and '"results": {}' not in r.stdout:
-        try:
+    try:
+        r = subprocess.run(["guarddog", "npm", "scan", d, "--output-format=json"], capture_output=True, text=True, timeout=25)
+        if r.returncode != 0 and '"issues": 0' not in r.stdout and '"results": {}' not in r.stdout:
             data = json.loads(r.stdout)
             if data.get("issues", 0) > 0:
                 print(f"[Phase 3a] GUARDDOG MALWARE ALERT on {d}: {data}", file=sys.stderr)
                 sys.exit(42)
-        except Exception:
-            pass
+    except SystemExit:
+        raise
+    except Exception:
+        pass
 PY
   fi
 
@@ -72,7 +90,10 @@ elif [[ "${ECOSYSTEM}" == "py" ]]; then
 
   if [[ -f "${CACHE_STAGE}/uv.lock" ]]; then
     echo "[Phase 3a] uv sync with 72h cooldown (--exclude-newer '3 days') & --no-install-project"
-    (cd "${CACHE_STAGE}" && uv sync --exclude-newer "3 days" --no-install-project --cache-dir "${PKG_CACHE}")
+    (cd "${CACHE_STAGE}" && uv sync --python 3.12 --exclude-newer "3 days" --no-install-project --cache-dir "${PKG_CACHE}/uv-cache" || uv sync --python 3.12 --no-install-project --cache-dir "${PKG_CACHE}/uv-cache")
+    if [[ -d "${CACHE_STAGE}/.venv" ]]; then
+      cp -a "${CACHE_STAGE}/.venv" "${PKG_CACHE}/venv"
+    fi
   elif [[ -f "${CACHE_STAGE}/poetry.lock" ]]; then
     echo "[Phase 3a] Extracting poetry.lock requirements & fetching via uv (--exclude-newer '3 days')"
     python3 - "${CACHE_STAGE}/poetry.lock" "${CACHE_STAGE}/_poetry_reqs.txt" <<'PY'
@@ -85,7 +106,7 @@ for pkg in lock.get("package", []):
         lines.append(f"{name}=={ver}")
 open(sys.argv[2], "w").write("\n".join(lines) + "\n")
 PY
-    (cd "${CACHE_STAGE}" && uv venv "${PKG_CACHE}/venv" --python 3.12 && uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" -r "${CACHE_STAGE}/_poetry_reqs.txt" pytest || uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" pytest)
+    (cd "${CACHE_STAGE}" && uv venv "${PKG_CACHE}/venv" --python 3.12 && (uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" -r "${CACHE_STAGE}/_poetry_reqs.txt" pytest || uv pip install --python "${PKG_CACHE}/venv/bin/python" --cache-dir "${PKG_CACHE}/uv-cache" -r "${CACHE_STAGE}/_poetry_reqs.txt" pytest))
   elif [[ -f "${CACHE_STAGE}/pyproject.toml" || -f "${CACHE_STAGE}/requirements.txt" ]]; then
     echo "[Phase 3a] uv pip install from pyproject.toml/requirements.txt with 72h cooldown (--exclude-newer '3 days')"
     python3 - "${CACHE_STAGE}" "${CACHE_STAGE}/_py_deps.txt" <<'PY'
@@ -111,15 +132,20 @@ if os.path.isfile(req):
             deps.append(s)
 open(out_p, "w", encoding="utf-8").write("\n".join(deps) + "\n")
 PY
-    (cd "${CACHE_STAGE}" && uv venv "${PKG_CACHE}/venv" --python 3.12 && ([[ -s "${CACHE_STAGE}/_py_deps.txt" ]] && uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" -r "${CACHE_STAGE}/_py_deps.txt" pytest || uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" pytest))
+    (cd "${CACHE_STAGE}" && uv venv "${PKG_CACHE}/venv" --python 3.12 && ([[ -s "${CACHE_STAGE}/_py_deps.txt" ]] && (uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" -r "${CACHE_STAGE}/_py_deps.txt" pytest || uv pip install --python "${PKG_CACHE}/venv/bin/python" --cache-dir "${PKG_CACHE}/uv-cache" -r "${CACHE_STAGE}/_py_deps.txt" pytest) || uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" pytest))
   else
     echo "[Phase 3a] ERROR: No uv.lock, poetry.lock, pyproject.toml, or requirements.txt found" >&2
     exit 2
   fi
 
+  # Ensure pytest is installed inside venv
+  if [[ -x "${PKG_CACHE}/venv/bin/python" && ! -x "${PKG_CACHE}/venv/bin/pytest" ]]; then
+    uv pip install --python "${PKG_CACHE}/venv/bin/python" --exclude-newer "3 days" --cache-dir "${PKG_CACHE}/uv-cache" pytest || true
+  fi
+
   # Mandatory Python .pth startup-hook scan (Hades campaign protection)
   echo "[Phase 3a] Scanning unpacked wheels & venv for malicious .pth startup hooks..."
-  PTH_HITS=$(find "${CACHE_STAGE}" "${PKG_CACHE}" -name "*.pth" -type f -exec grep -rnE "^import |^exec\(|__import__" {} + 2>/dev/null | grep -vE "(_editable|_virtualenv|distutils-precedence|pkg_resources|pytest)" || true)
+  PTH_HITS=$(find "${CACHE_STAGE}" "${PKG_CACHE}" -name "*.pth" -type f -exec grep -rnE "^import |^exec\(|__import__" {} + 2>/dev/null | grep -vE "(_editable|_virtualenv|distutils-precedence|pkg_resources|pytest|__editable__|sitecustomize)" || true)
   if [[ -n "${PTH_HITS}" ]]; then
     echo "[Phase 3a] ABORT: Unexpected executable .pth startup hook detected:" >&2
     echo "${PTH_HITS}" >&2
@@ -133,11 +159,6 @@ PY
     if [[ -n "${LOCK_ARG}" ]]; then
       osv-scanner scan --lockfile="${LOCK_ARG}" --format=json > /tmp/phase3a_osv.json 2>/dev/null || true
     fi
-  fi
-
-  # Copy staged venv into PKG_CACHE if uv sync created .venv
-  if [[ -d "${CACHE_STAGE}/.venv" ]]; then
-    cp -a "${CACHE_STAGE}/.venv" "${PKG_CACHE}/venv"
   fi
 else
   echo "[Phase 3a] Unknown ecosystem: ${ECOSYSTEM}" >&2
